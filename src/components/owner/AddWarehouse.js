@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '@/lib/firebase';
+import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
+import { db, storage, auth } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   Building2, User, ArrowLeft, ArrowRight, CheckCircle,
-  AlertCircle, Loader2, Settings, DollarSign, ImageIcon, UploadCloud, X
+  AlertCircle, Loader2, Settings, DollarSign, ImageIcon, UploadCloud, X, ChevronDown
 } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────────
@@ -16,13 +17,12 @@ import {
 
 // Step 1 – Warehouse Details
 const WAREHOUSE_CATEGORIES = ['Bonded', 'Non-Bonded', 'FTWZ'];
-const CONSTRUCTION_TYPES = ['RCC', 'PEB', 'Shed'];
+const CONSTRUCTION_TYPES = ['RCC', 'PEB', 'Shed', 'Other'];
 const STORAGE_TYPES = ['Hazardous', 'Non-Hazardous', 'Temperature Controlled', 'Non-Temperature'];
 const WAREHOUSE_AGES = ['0-3 years', '3-7 years', '7+ years'];
 
-// Step 2 – Operations
 const DAYS_OF_OPERATION = ['Mon-Fri', 'Mon-Sat', 'All 7 Days'];
-const OPERATION_TIMES = ['24x7', 'Fixed Hours'];
+const OPERATION_TIMES = ['24x7', 'Fixed Hours', 'Other'];
 const SECURITY_FEATURES = ['CCTV', 'Fire Safety System', 'Security Guard'];
 const SUITABLE_GOODS = ['FMCG', 'Pharma', 'Chemicals', 'Food', 'Automobile', 'Metals', 'Others'];
 const VALUE_ADDED_SERVICES = [
@@ -41,10 +41,10 @@ const BUSINESS_TYPES = ['Warehouse Owner', '3PL Service Provider', 'Both'];
 
 // Step labels for the header
 const STEP_LABELS = {
-  1: 'Warehouse Details',
-  2: 'Operations & Services',
-  3: 'Pricing & Photos',
-  4: 'Owner / Business Details',
+  1: 'Owner / Business Details',
+  2: 'Warehouse Details',
+  3: 'Operations & Services',
+  4: 'Pricing & Photos',
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -65,6 +65,7 @@ export default function AddWarehouse({ setActiveTab }) {
     numberOfDockDoors: '',
     containerHandling: '',   // 'Yes' | 'No'
     typeOfConstruction: '',
+    customTypeOfConstruction: '',
     storageTypes: [],
     warehouseAge: '',
     warehouseGstPan: '',
@@ -81,6 +82,7 @@ export default function AddWarehouse({ setActiveTab }) {
     wmsAvailable: '',
     daysOfOperation: '',
     operationTime: '',
+    customOperationTime: '',
     securityFeatures: [],
     suitableGoods: [],
     valueAddedServices: [],
@@ -112,6 +114,15 @@ export default function AddWarehouse({ setActiveTab }) {
     email: '',
     ownerGstPan: '',
   });
+
+  // OTP Verification state
+  const [otpSent, setOtpSent] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [otpError, setOtpError] = useState('');
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
+  const [confirmationResult, setConfirmationResult] = useState(null);
 
   // ── UI state ─────────────────────────────────────────────
   const [errors, setErrors] = useState({});
@@ -173,13 +184,37 @@ export default function AddWarehouse({ setActiveTab }) {
 
   const validateStep1 = () => {
     const e = {};
+    if (!ownerDetails.businessType) e.businessType = 'Please select a business type';
+    if (!ownerDetails.companyName.trim()) e.companyName = 'Company name is required';
+    if (!ownerDetails.contactPerson.trim()) e.contactPerson = 'Contact person is required';
+    if (!ownerDetails.mobile.trim()) e.mobile = 'Mobile number is required';
+    else if (!otpVerified) e.mobile = 'Mobile number must be OTP verified';
+    if (!ownerDetails.email.trim()) e.email = 'Email is required';
+    return e;
+  };
+
+  const validateStep2 = () => {
+    const e = {};
     if (!warehouseDetails.warehouseName.trim()) e.warehouseName = 'Warehouse name is required';
     if (!warehouseDetails.warehouseCategory) e.warehouseCategory = 'Please select a category';
+    const total = Number(warehouseDetails.totalArea);
+    const available = Number(warehouseDetails.availableArea);
+
     if (!warehouseDetails.totalArea) e.totalArea = 'Total area is required';
+    else if (total < 0) e.totalArea = 'Total area cannot be negative';
+
     if (!warehouseDetails.availableArea) e.availableArea = 'Available area is required';
+    else if (available < 0) e.availableArea = 'Available area cannot be negative';
+    else if (total > 0 && available > total) e.availableArea = 'Available area cannot be greater than Total area';
+
     if (!warehouseDetails.clearHeight) e.clearHeight = 'Clear height is required';
     if (!warehouseDetails.numberOfDockDoors) e.numberOfDockDoors = 'Number of dock doors is required';
     if (!warehouseDetails.containerHandling) e.containerHandling = 'Please select Yes or No';
+
+    if (warehouseDetails.typeOfConstruction === 'Other' && !warehouseDetails.customTypeOfConstruction.trim()) {
+      e.customTypeOfConstruction = 'Please specify the construction type';
+    }
+
     if (warehouseDetails.storageTypes.length === 0) e.storageTypes = 'Select at least one storage type';
     if (!warehouseDetails.state.trim()) e.state = 'State is required';
     if (!warehouseDetails.city.trim()) e.city = 'City is required';
@@ -188,16 +223,21 @@ export default function AddWarehouse({ setActiveTab }) {
     return e;
   };
 
-  const validateStep2 = () => {
+  const validateStep3 = () => {
     const e = {};
     if (!operationsDetails.daysOfOperation) e.daysOfOperation = 'Please select days of operation';
     if (!operationsDetails.operationTime) e.operationTime = 'Please select operation time';
+
+    if (operationsDetails.operationTime === 'Other' && !operationsDetails.customOperationTime.trim()) {
+      e.customOperationTime = 'Please specify the operation time';
+    }
+
     if (operationsDetails.securityFeatures.length === 0) e.securityFeatures = 'Select at least one security feature';
-    if (operationsDetails.suitableGoods.length === 0) e.suitableGoods = 'Select at least one suitable good';
+    if (!operationsDetails.suitableGoods.length === 0) e.suitableGoods = 'Select at least one suitable good';
     return e;
   };
 
-  const validateStep3 = () => {
+  const validateStep4 = () => {
     const e = {};
     if (!pricingDetails.pricingModel) e.pricingModel = 'Please select a pricing model';
     if (!pricingDetails.storageRate) e.storageRate = 'Storage rate is required';
@@ -207,22 +247,72 @@ export default function AddWarehouse({ setActiveTab }) {
     return e;
   };
 
-  const validateStep4 = () => {
-    const e = {};
-    if (!ownerDetails.businessType) e.businessType = 'Please select a business type';
-    if (!ownerDetails.companyName.trim()) e.companyName = 'Company name is required';
-    if (!ownerDetails.contactPerson.trim()) e.contactPerson = 'Contact person is required';
-    if (!ownerDetails.mobile.trim()) e.mobile = 'Mobile number is required';
-    if (!ownerDetails.email.trim()) e.email = 'Email is required';
-    return e;
-  };
-
   // ─────────────────────────────────────────────────────────
   // Navigation
   // ─────────────────────────────────────────────────────────
 
+  const setupRecaptcha = () => {
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        'size': 'invisible',
+      });
+    }
+  };
+
+  const handleSendOtp = async () => {
+    if (!ownerDetails.mobile || ownerDetails.mobile.length < 10) {
+      setOtpError("Please enter a valid mobile number.");
+      return;
+    }
+    setOtpError('');
+    setSendingOtp(true);
+    try {
+      setupRecaptcha();
+      const appVerifier = window.recaptchaVerifier;
+      // Format number to string, assuming +91 for India if no country code provided
+      let formattedNumber = ownerDetails.mobile.trim();
+      if (!formattedNumber.startsWith('+')) {
+        formattedNumber = '+91' + formattedNumber;
+      }
+
+      const confResult = await signInWithPhoneNumber(auth, formattedNumber, appVerifier);
+      setConfirmationResult(confResult);
+      setOtpSent(true);
+    } catch (error) {
+      console.error("Error sending OTP:", error);
+      // Surface the actual error message to the UI
+      const errorMsg = error.message || error.code || "Please try again.";
+      setOtpError(`Failed to send OTP: ${errorMsg}`);
+      if (window.recaptchaVerifier) {
+        window.recaptchaVerifier.clear()
+        window.recaptchaVerifier = null;
+      }
+    } finally {
+      setSendingOtp(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!otp || otp.length < 6) {
+      setOtpError("Please enter a valid 6-digit OTP.");
+      return;
+    }
+    setOtpError('');
+    setVerifyingOtp(true);
+    try {
+      await confirmationResult.confirm(otp);
+      setOtpVerified(true);
+      setOtpSent(false); // Hide OTP field
+    } catch (error) {
+      console.error("Error verifying OTP:", error);
+      setOtpError("Invalid OTP. Please try again.");
+    } finally {
+      setVerifyingOtp(false);
+    }
+  };
+
   const handleNext = () => {
-    const validators = { 1: validateStep1, 2: validateStep2, 3: validateStep3 };
+    const validators = { 1: validateStep1, 2: validateStep2, 3: validateStep3, 4: validateStep4 };
     const errs = validators[step]();
     if (Object.keys(errs).length > 0) { setErrors(errs); return; }
     setErrors({});
@@ -275,7 +365,9 @@ export default function AddWarehouse({ setActiveTab }) {
         clearHeight: Number(warehouseDetails.clearHeight),
         numberOfDockDoors: Number(warehouseDetails.numberOfDockDoors),
         containerHandling: warehouseDetails.containerHandling,
-        typeOfConstruction: warehouseDetails.typeOfConstruction || null,
+        typeOfConstruction: warehouseDetails.typeOfConstruction === 'Other'
+          ? warehouseDetails.customTypeOfConstruction.trim()
+          : (warehouseDetails.typeOfConstruction || null),
         storageTypes: warehouseDetails.storageTypes,
         warehouseAge: warehouseDetails.warehouseAge || null,
         warehouseGstPan: warehouseDetails.warehouseGstPan.trim() || null,
@@ -289,7 +381,9 @@ export default function AddWarehouse({ setActiveTab }) {
         outboundHandling: operationsDetails.outboundHandling || null,
         wmsAvailable: operationsDetails.wmsAvailable || null,
         daysOfOperation: operationsDetails.daysOfOperation,
-        operationTime: operationsDetails.operationTime,
+        operationTime: operationsDetails.operationTime === 'Other'
+          ? operationsDetails.customOperationTime.trim()
+          : operationsDetails.operationTime,
         securityFeatures: operationsDetails.securityFeatures,
         suitableGoods: operationsDetails.suitableGoods,
         valueAddedServices: operationsDetails.valueAddedServices,
@@ -415,9 +509,107 @@ export default function AddWarehouse({ setActiveTab }) {
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden min-h-[500px] flex flex-col">
 
         {/* ═══════════════════════════════════════════════════
-            STEP 1 — Warehouse Details
+            STEP 1 — Owner / Business Details
         ═══════════════════════════════════════════════════ */}
         {step === 1 && (
+          <div className="p-8 animate-in fade-in slide-in-from-right-8 duration-300 flex-1">
+            <SectionHeading icon={<User className="w-5 h-5 text-orange-600" />} title="Owner / Business Details" />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <SelectField label="Business Type" id="businessType" options={BUSINESS_TYPES}
+                placeholder="Select business type" value={ownerDetails.businessType}
+                onChange={v => handleOwnerChange('businessType', v)} mandatory errors={errors} />
+
+              <Field label="Company Name" id="companyName" placeholder="e.g. MetroStore Pvt Ltd"
+                value={ownerDetails.companyName} onChange={v => handleOwnerChange('companyName', v)} mandatory errors={errors} />
+
+              <Field label="Contact Person" id="contactPerson" placeholder="e.g. Vikram Singh"
+                value={ownerDetails.contactPerson} onChange={v => handleOwnerChange('contactPerson', v)} mandatory errors={errors} />
+
+              <div className="flex flex-col relative w-full pt-1">
+                <Field label="Mobile" id="mobile" type="tel" placeholder="+91 98765 43210"
+                  value={ownerDetails.mobile} onChange={v => {
+                    handleOwnerChange('mobile', v);
+                    if (otpVerified) setOtpVerified(false);
+                    if (otpSent) setOtpSent(false);
+                  }} mandatory errors={errors} />
+
+                {/* OTP Minimalistic Section */}
+                <div className="text-sm mt-1 mb-2">
+                  {otpVerified ? (
+                    <span className="flex items-center gap-1 font-bold text-green-600">
+                      <CheckCircle className="w-4 h-4" /> Verified
+                    </span>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      {!otpSent ? (
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-500 text-xs">Phone not verified</span>
+                          <button
+                            type="button"
+                            onClick={handleSendOtp}
+                            disabled={sendingOtp || !ownerDetails.mobile || ownerDetails.mobile.length < 10}
+                            className="bg-slate-900 border border-transparent shadow hover:bg-slate-800 text-white rounded-lg px-4 py-1.5 text-xs font-semibold disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                          >
+                            {sendingOtp && <Loader2 className="w-3 h-3 animate-spin" />}
+                            Send OTP
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-end gap-2 mt-1">
+                          <div className="flex-1">
+                            <Field
+                              label="Enter OTP"
+                              id="otpCode"
+                              type="text"
+                              placeholder="123456"
+                              value={otp}
+                              onChange={setOtp}
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={handleVerifyOtp}
+                            disabled={verifyingOtp || otp.length < 6}
+                            className="px-4 py-[14px] bg-orange-600 text-white text-sm font-semibold rounded-xl hover:bg-orange-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2 mb-1"
+                          >
+                            {verifyingOtp ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verify'}
+                          </button>
+                        </div>
+                      )}
+
+                      <div id="recaptcha-container"></div>
+
+                      {otpSent && !verifyingOtp && (
+                        <button
+                          type="button"
+                          onClick={handleSendOtp}
+                          disabled={sendingOtp}
+                          className="text-xs text-orange-600 hover:text-orange-700 self-start underline font-medium"
+                        >
+                          {sendingOtp ? 'Sending...' : 'Resend OTP'}
+                        </button>
+                      )}
+
+                      {otpError && <ErrMsg msg={otpError} />}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <Field label="Email" id="email" type="email" placeholder="contact@company.com"
+                value={ownerDetails.email} onChange={v => handleOwnerChange('email', v)} mandatory errors={errors} />
+
+              <Field label="GST / PAN (Optional)" id="ownerGstPan" placeholder="e.g. ABCDE1234F"
+                value={ownerDetails.ownerGstPan} onChange={v => handleOwnerChange('ownerGstPan', v)} errors={errors} />
+            </div>
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════════
+            STEP 2 — Warehouse Details
+        ═══════════════════════════════════════════════════ */}
+        {step === 2 && (
           <div className="p-8 animate-in fade-in slide-in-from-right-8 duration-300 flex-1">
             <SectionHeading icon={<Building2 className="w-5 h-5 text-orange-600" />} title="Warehouse Details" />
 
@@ -444,9 +636,22 @@ export default function AddWarehouse({ setActiveTab }) {
               <YesNoField label="40 ft Container Handling" id="containerHandling"
                 value={warehouseDetails.containerHandling} onChange={v => handleWarehouseChange('containerHandling', v)} mandatory errors={errors} />
 
-              <SelectField label="Type of Construction" id="typeOfConstruction" options={CONSTRUCTION_TYPES}
-                placeholder="Select type (optional)" value={warehouseDetails.typeOfConstruction}
-                onChange={v => handleWarehouseChange('typeOfConstruction', v)} errors={errors} />
+              <div className="flex flex-col gap-4">
+                <SelectField label="Type of Construction" id="typeOfConstruction" options={CONSTRUCTION_TYPES}
+                  placeholder="Select type (optional)" value={warehouseDetails.typeOfConstruction}
+                  onChange={v => {
+                    handleWarehouseChange('typeOfConstruction', v);
+                    if (v !== 'Other') handleWarehouseChange('customTypeOfConstruction', '');
+                  }} errors={errors} />
+
+                {warehouseDetails.typeOfConstruction === 'Other' && (
+                  <div className="animate-in fade-in slide-in-from-top-2 duration-200">
+                    <Field label="Specify Other Type" id="customTypeOfConstruction" placeholder="e.g. Mixed Construction"
+                      value={warehouseDetails.customTypeOfConstruction || ''}
+                      onChange={v => handleWarehouseChange('customTypeOfConstruction', v)} mandatory errors={errors} />
+                  </div>
+                )}
+              </div>
 
               <SelectField label="Warehouse Age" id="warehouseAge" options={WAREHOUSE_AGES}
                 placeholder="Select age (optional)" value={warehouseDetails.warehouseAge}
@@ -486,9 +691,9 @@ export default function AddWarehouse({ setActiveTab }) {
         )}
 
         {/* ═══════════════════════════════════════════════════
-            STEP 2 — Operations & Services
+            STEP 3 — Operations & Services
         ═══════════════════════════════════════════════════ */}
-        {step === 2 && (
+        {step === 3 && (
           <div className="p-8 animate-in fade-in slide-in-from-right-8 duration-300 flex-1 space-y-8">
 
             {/* Operations */}
@@ -508,9 +713,22 @@ export default function AddWarehouse({ setActiveTab }) {
                   placeholder="Select days" value={operationsDetails.daysOfOperation}
                   onChange={v => handleOperationsChange('daysOfOperation', v)} mandatory errors={errors} />
 
-                <SelectField label="Operation Time" id="operationTime" options={OPERATION_TIMES}
-                  placeholder="Select time" value={operationsDetails.operationTime}
-                  onChange={v => handleOperationsChange('operationTime', v)} mandatory errors={errors} />
+                <div className="flex flex-col gap-4">
+                  <SelectField label="Operation Time" id="operationTime" options={OPERATION_TIMES}
+                    placeholder="Select time" value={operationsDetails.operationTime}
+                    onChange={v => {
+                      handleOperationsChange('operationTime', v);
+                      if (v !== 'Other') handleOperationsChange('customOperationTime', '');
+                    }} mandatory errors={errors} />
+
+                  {operationsDetails.operationTime === 'Other' && (
+                    <div className="animate-in fade-in slide-in-from-top-2 duration-200">
+                      <Field label="Specify Other Time" id="customOperationTime" placeholder="e.g. 9 AM to 6 PM"
+                        value={operationsDetails.customOperationTime || ''}
+                        onChange={v => handleOperationsChange('customOperationTime', v)} mandatory errors={errors} />
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="mt-6 space-y-6">
@@ -555,9 +773,9 @@ export default function AddWarehouse({ setActiveTab }) {
         )}
 
         {/* ═══════════════════════════════════════════════════
-            STEP 3 — Pricing & Photos
+            STEP 4 — Pricing & Photos
         ═══════════════════════════════════════════════════ */}
-        {step === 3 && (
+        {step === 4 && (
           <div className="p-8 animate-in fade-in slide-in-from-right-8 duration-300 flex-1 space-y-8">
 
             {/* Pricing */}
@@ -606,36 +824,6 @@ export default function AddWarehouse({ setActiveTab }) {
                 <PhotoUpload label="Rate Card — PDF/JPG (Optional)" id="rateCard" fileRef={rateCardRef}
                   file={photos.rateCard} onFileChange={handleFileChange} errors={errors} />
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* ═══════════════════════════════════════════════════
-            STEP 4 — Owner / Business Details
-        ═══════════════════════════════════════════════════ */}
-        {step === 4 && (
-          <div className="p-8 animate-in fade-in slide-in-from-right-8 duration-300 flex-1">
-            <SectionHeading icon={<User className="w-5 h-5 text-orange-600" />} title="Owner / Business Details" />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <SelectField label="Business Type" id="businessType" options={BUSINESS_TYPES}
-                placeholder="Select business type" value={ownerDetails.businessType}
-                onChange={v => handleOwnerChange('businessType', v)} mandatory errors={errors} />
-
-              <Field label="Company Name" id="companyName" placeholder="e.g. MetroStore Pvt Ltd"
-                value={ownerDetails.companyName} onChange={v => handleOwnerChange('companyName', v)} mandatory errors={errors} />
-
-              <Field label="Contact Person" id="contactPerson" placeholder="e.g. Vikram Singh"
-                value={ownerDetails.contactPerson} onChange={v => handleOwnerChange('contactPerson', v)} mandatory errors={errors} />
-
-              <Field label="Mobile (OTP Verified)" id="mobile" type="tel" placeholder="+91 98765 43210"
-                value={ownerDetails.mobile} onChange={v => handleOwnerChange('mobile', v)} mandatory errors={errors} />
-
-              <Field label="Email" id="email" type="email" placeholder="contact@company.com"
-                value={ownerDetails.email} onChange={v => handleOwnerChange('email', v)} mandatory errors={errors} />
-
-              <Field label="GST / PAN (Optional)" id="ownerGstPan" placeholder="e.g. ABCDE1234F"
-                value={ownerDetails.ownerGstPan} onChange={v => handleOwnerChange('ownerGstPan', v)} errors={errors} />
             </div>
 
             {/* Submit error */}
@@ -736,19 +924,72 @@ function Field({ label, id, type = 'text', placeholder, value, onChange, mandato
 
 /** Dropdown select */
 function SelectField({ label, id, options, value, onChange, mandatory = false, placeholder = 'Select...', errors = {} }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   return (
-    <div className="space-y-1">
+    <div className="space-y-1 relative" ref={dropdownRef}>
       <label htmlFor={id} className="text-sm font-bold text-slate-700">
         {label} {mandatory && <span className="text-orange-500">*</span>}
       </label>
-      <select
-        id={id} value={value} onChange={e => onChange(e.target.value)}
-        className={`w-full p-3 bg-slate-50 border rounded-xl outline-none transition-all text-slate-700 ${errors[id] ? 'border-red-400 bg-red-50' : 'border-slate-200'
-          }`}
+
+      <button
+        type="button"
+        id={id}
+        onClick={() => setIsOpen(!isOpen)}
+        className={`w-full p-3 bg-slate-50 border rounded-xl outline-none text-left transition-all flex items-center justify-between shadow-sm
+          ${errors[id] ? 'border-red-400 bg-red-50 text-slate-700' : 'border-slate-200 text-slate-700 hover:border-slate-300'}
+          ${isOpen ? 'ring-2 ring-orange-500 border-transparent bg-white' : 'focus:ring-2 focus:ring-orange-500'}
+        `}
       >
-        <option value="">{placeholder}</option>
-        {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-      </select>
+        <span className={!value ? 'text-slate-500' : ''}>
+          {value || placeholder}
+        </span>
+        <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute z-50 w-full mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+          <div className="max-h-60 overflow-y-auto p-1.5 scrollbar-thin scrollbar-thumb-slate-200">
+            <button
+              type="button"
+              disabled
+              className="w-full text-left px-3 py-2 text-sm text-slate-400 opacity-70 cursor-default rounded-lg"
+            >
+              {placeholder}
+            </button>
+            {options.map(opt => {
+              const isActive = value === opt;
+              return (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => {
+                    onChange(opt);
+                    setIsOpen(false);
+                  }}
+                  className={`w-full text-left px-3 py-2 text-sm rounded-xl transition-all flex items-center justify-between mb-0.5 last:mb-0
+                    ${isActive ? 'bg-orange-50 text-orange-700 font-semibold' : 'text-slate-700 hover:bg-slate-50'}
+                  `}
+                >
+                  {opt}
+                  {isActive && <CheckCircle className="w-4 h-4 text-orange-600" />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
       {errors[id] && <ErrMsg msg={errors[id]} />}
     </div>
   );
