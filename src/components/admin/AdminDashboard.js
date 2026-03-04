@@ -828,9 +828,6 @@ function GeoAnalyticsView() {
     useEffect(() => {
         (async () => {
             try {
-                const { signInAnonymously } = await import('firebase/auth');
-                const { auth } = await import('@/lib/firebase');
-                await signInAnonymously(auth);
                 const { collection, getDocs, query, orderBy } = await import('firebase/firestore');
                 const snap = await getDocs(query(collection(db, 'visitors'), orderBy('timestamp', 'desc')));
                 const docs = snap.docs.map(d => d.data());
