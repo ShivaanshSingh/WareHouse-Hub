@@ -37,7 +37,7 @@ export async function trackVisitor(geoData) {
       city, region,
       date: today,
       pageviews: increment(1),
-      timestamp: serverTimestamp(),
+      lastSeen: serverTimestamp(),
     }, { merge: true });
     return { status: 'tracked', docId };
   } catch (err) {
