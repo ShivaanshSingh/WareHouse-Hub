@@ -22,9 +22,25 @@
 import {
   RecaptchaVerifier,
   signInWithPhoneNumber,
+  getAuth,
   signOut,
 } from 'firebase/auth';
-import { auth } from './firebase';
+import { getApps, initializeApp } from 'firebase/app';
+
+const secondaryAppName = '__phone_auth_app__';
+
+function getPhoneAuthInstance() {
+  const existing = getApps().find(app => app.name === secondaryAppName);
+  const app = existing || initializeApp({
+    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  }, secondaryAppName);
+  return getAuth(app);
+}
 
 let _confirmationResult = null;
 let _recaptchaVerifier = null;
@@ -49,16 +65,17 @@ function clearRecaptcha() {
  * @param {string} phoneNumber - E.164 format, e.g. "+919876543210"
  */
 export async function sendPhoneOtp(phoneNumber) {
+  const phoneAuth = getPhoneAuthInstance();
   clearRecaptcha();
 
-  _recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+  _recaptchaVerifier = new RecaptchaVerifier(phoneAuth, 'recaptcha-container', {
     size: 'invisible',
     'expired-callback': clearRecaptcha,
   });
 
   phoneVerificationFlowActive = true;
   try {
-    _confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, _recaptchaVerifier);
+    _confirmationResult = await signInWithPhoneNumber(phoneAuth, phoneNumber, _recaptchaVerifier);
   } catch (error) {
     clearRecaptcha();
     _confirmationResult = null;
@@ -81,10 +98,12 @@ export async function verifyPhoneOtp(otp) {
     throw new Error('No OTP session found. Please request a new OTP first.');
   }
 
+  const phoneAuth = getPhoneAuthInstance();
+
   phoneVerificationFlowActive = true;
   try {
     await _confirmationResult.confirm(otp);
-    await signOut(auth);
+    await signOut(phoneAuth);
     _confirmationResult = null;
     clearRecaptcha();
     return true;

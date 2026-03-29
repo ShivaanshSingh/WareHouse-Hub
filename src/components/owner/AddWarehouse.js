@@ -2,8 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '@/lib/firebase';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { auth, db, storage } from '@/lib/firebase';
 import { sendPhoneOtp, verifyPhoneOtp } from '@/lib/phoneAuth';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -137,6 +137,7 @@ export default function AddWarehouse({ setActiveTab }) {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [uploadProgress, setUploadProgress] = useState(0); // Add progress state
 
   const frontViewRef = useRef(null);
   const insideViewRef = useRef(null);
@@ -179,8 +180,12 @@ export default function AddWarehouse({ setActiveTab }) {
     if (errors[field]) setErrors(prev => ({ ...prev, [field]: '' }));
   };
 
-  // Handle photo file selection
+  // Handle photo file selection — enforce 10 MB client-side limit
   const handleFileChange = (photoKey, file) => {
+    if (file && file.size > 10 * 1024 * 1024) {
+      setErrors(prev => ({ ...prev, [photoKey]: 'File too large — max 10 MB allowed' }));
+      return;
+    }
     setPhotos(prev => ({ ...prev, [photoKey]: file }));
     if (errors[photoKey]) setErrors(prev => ({ ...prev, [photoKey]: '' }));
   };
@@ -341,10 +346,38 @@ export default function AddWarehouse({ setActiveTab }) {
   // Upload helper — uploads a File to Firebase Storage, returns URL
   // ─────────────────────────────────────────────────────────
 
-  const uploadFile = async (file, path) => {
-    const storageRef = ref(storage, path);
-    await uploadBytes(storageRef, file);
-    return getDownloadURL(storageRef);
+  const uploadFile = (file, basePath, onProgress) => {
+    return new Promise((resolve, reject) => {
+      if (!file) {
+        resolve(null);
+        return;
+      }
+      const ext = file.name.split('.').pop();
+      const pathWithExt = `${basePath}.${ext}`;
+      const storageRef = ref(storage, pathWithExt);
+
+      const metadata = { contentType: file.type };
+      const uploadTask = uploadBytesResumable(storageRef, file, metadata);
+
+      uploadTask.on('state_changed',
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          if (onProgress) onProgress(progress);
+        },
+        (error) => {
+          console.error('Storage Upload Error:', error);
+          reject(error);
+        },
+        async () => {
+          try {
+            const url = await getDownloadURL(uploadTask.snapshot.ref);
+            resolve(url);
+          } catch (err) {
+            reject(err);
+          }
+        }
+      );
+    });
   };
 
   // ─────────────────────────────────────────────────────────
@@ -355,21 +388,62 @@ export default function AddWarehouse({ setActiveTab }) {
     const errs = validateStep4();
     if (Object.keys(errs).length > 0) { setErrors(errs); return; }
 
+    // Verify user is authenticated
+    if (!user || !user.uid) {
+      setSubmitError('You must be logged in to add a warehouse');
+      setSubmitting(false);
+      return;
+    }
+
+    const currentAuthUser = auth.currentUser;
+    if (!currentAuthUser) {
+      setSubmitError('Session expired. Please log in again and retry.');
+      setSubmitting(false);
+      return;
+    }
+
     setSubmitting(true);
     setSubmitError('');
+    setUploadProgress(0);
 
     try {
+      await currentAuthUser.getIdToken(true);
+
       // Upload photos to Firebase Storage
       const timestamp = Date.now();
-      const uid = user?.uid || 'unknown';
+      const uid = currentAuthUser.uid;
+      if (user.uid !== uid) {
+        setSubmitError('Session mismatch detected. Please log out and log in again.');
+        setSubmitting(false);
+        return;
+      }
       const basePath = `warehouse_photos/${uid}/${timestamp}`;
 
+      console.log('Starting Firebase Storage uploads...', { photos });
+      
+      // Calculate total files to upload
+      const filesToUpload = [photos.frontView, photos.insideView, photos.dockArea, photos.rateCard].filter(f => f !== null);
+      if (filesToUpload.length === 0) {
+        setUploadProgress(100);
+      }
+
+      // Track individual file progress
+      const progressMap = {};
+      const handleProgress = (fileKey, pct) => {
+        progressMap[fileKey] = pct;
+        const totalPct = Object.values(progressMap).reduce((a, b) => a + b, 0) / (filesToUpload.length || 1);
+        setUploadProgress(Math.round(totalPct));
+      };
+
       const [frontViewURL, insideViewURL, dockAreaURL, rateCardURL] = await Promise.all([
-        photos.frontView ? uploadFile(photos.frontView, `${basePath}/front_view`) : Promise.resolve(null),
-        photos.insideView ? uploadFile(photos.insideView, `${basePath}/inside_view`) : Promise.resolve(null),
-        photos.dockArea ? uploadFile(photos.dockArea, `${basePath}/dock_area`) : Promise.resolve(null),
-        photos.rateCard ? uploadFile(photos.rateCard, `${basePath}/rate_card`) : Promise.resolve(null),
+        uploadFile(photos.frontView, `${basePath}/front_view`, (pct) => handleProgress('frontView', pct)),
+        uploadFile(photos.insideView, `${basePath}/inside_view`, (pct) => handleProgress('insideView', pct)),
+        uploadFile(photos.dockArea, `${basePath}/dock_area`, (pct) => handleProgress('dockArea', pct)),
+        uploadFile(photos.rateCard, `${basePath}/rate_card`, (pct) => handleProgress('rateCard', pct))
       ]);
+
+      console.log('Uploads complete! URLs:', { frontViewURL, insideViewURL, dockAreaURL, rateCardURL });
+      console.log('Saving doc to Firestore...');
 
       // Build the Firestore document
       const docData = {
@@ -437,18 +511,28 @@ export default function AddWarehouse({ setActiveTab }) {
         ownerGstPan: ownerDetails.ownerGstPan.trim() || null,
 
         // ── Metadata ───────────────────────────────────────
-        ownerId: user?.uid || null,
+        ownerId: uid,
         status: 'pending',
         createdAt: serverTimestamp(),
       };
 
       await addDoc(collection(db, 'warehouse_details'), docData);
+      
+      console.log('Successfully saved to Firestore!');
       setSubmitted(true);
     } catch (err) {
       console.error('Error saving warehouse:', err);
-      setSubmitError('Failed to save. Please check your connection and try again.');
+      // Give more detailed feedback based on standard Firebase error codes
+      if (err.code === 'storage/unauthorized') {
+        setSubmitError('Upload blocked: auth token rejected by Storage. Please log out, log in again, and retry.');
+      } else if (err.code === 'storage/bucket-not-found') {
+        setSubmitError('Upload blocked: Storage bucket not configured correctly.');
+      } else {
+        setSubmitError(`Failed to save: ${err.message || 'Unknown network error.'}`);
+      }
     } finally {
       setSubmitting(false);
+      setUploadProgress(0);
     }
   };
 
@@ -962,10 +1046,21 @@ export default function AddWarehouse({ setActiveTab }) {
             </button>
           ) : (
             <button onClick={handleSubmit} disabled={submitting}
-              className="px-8 py-3 bg-orange-600 text-white font-bold rounded-xl hover:bg-orange-700 flex items-center gap-2 shadow-lg shadow-orange-200 hover:-translate-y-1 transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0">
-              {submitting
-                ? <><Loader2 className="w-4 h-4 animate-spin" /> Uploading & Saving...</>
-                : <><CheckCircle className="w-4 h-4" /> Publish Listing</>}
+              className="px-8 py-3 bg-orange-600 text-white font-bold rounded-xl hover:bg-orange-700 flex items-center gap-2 shadow-lg shadow-orange-200 hover:-translate-y-1 transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 w-64 justify-center relative overflow-hidden">
+              
+              {/* Progress bar background indicator */}
+              {submitting && uploadProgress < 100 && (
+                <div 
+                  className="absolute left-0 top-0 bottom-0 bg-orange-800/40 transition-all duration-300" 
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              )}
+              
+              <div className="relative z-10 flex items-center gap-2">
+                {submitting
+                  ? <><Loader2 className="w-4 h-4 animate-spin" /> {uploadProgress < 100 ? `Uploading... ${uploadProgress}%` : 'Saving Data...'}</>
+                  : <><CheckCircle className="w-4 h-4" /> Publish Listing</>}
+              </div>
             </button>
           )}
         </div>
