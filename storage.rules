@@ -21,10 +21,10 @@ service firebase.storage {
         && request.resource.contentType.matches('image/.*');
     }
 
-    match /warehouse_photos/{userId}/{uploadId}/{fileName=**} {
+    match /warehouse_photos/{ownerEmail}/{warehouseName}/{fileName=**} {
       allow read: if true;
-      allow create, update: if isOwner(userId) && isWarehouseFile();
-      allow delete: if isOwner(userId);
+      allow create, update: if isSignedIn() && isWarehouseFile();
+      allow delete: if isSignedIn();
     }
 
     match /profile-images/{userId}/{fileName=**} {

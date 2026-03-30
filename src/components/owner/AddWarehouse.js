@@ -420,7 +420,7 @@ export default function AddWarehouse({ setActiveTab }) {
       
       // Sanitize warehouse name for storage (remove illegal chars and replace spaces with underscores)
       const safeWarehouseName = warehouseDetails.warehouseName.trim().replace(/[^a-zA-Z0-9-]/g, '_');
-      const basePath = `warehouse_photos/${uid}/${safeWarehouseName}_${timestamp}`;
+      const basePath = `warehouse_photos/${ownerDetails.email.trim()}/${safeWarehouseName}`;
 
       console.log('Starting Firebase Storage uploads...', { photos });
       
