@@ -133,7 +133,7 @@ function formatPhoneError(error) {
     'auth/quota-exceeded':
       'SMS quota exceeded. Please try again later.',
     'auth/invalid-app-credential':
-      'Verification failed. Make sure the Auth Emulator is running: npx firebase emulators:start --only auth',
+      'Verification failed. If testing locally, ensure your URL is http://localhost:3000 (not 127.0.0.1). Ensure your domain is authorized in Firebase Console.',
     'auth/captcha-check-failed':
       'reCAPTCHA failed. Please refresh and try again.',
     'auth/network-request-failed':
