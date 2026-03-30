@@ -12,10 +12,9 @@ import {
     LayoutDashboard, Warehouse, CheckCircle2, XCircle, Clock,
     LogOut, Search, RefreshCw, ChevronDown, ChevronUp,
     MapPin, Shield, AlertTriangle, X, Wifi, WifiOff,
-    Settings, Package, Building2, Tag, Loader2, Database, Globe,
+    Settings, Package, Building2, Tag, Loader2, Database,
 } from 'lucide-react';
 import { migrateWarehouseFields } from '@/lib/migrateFields';
-import { ComposableMap, Geographies, Geography, ZoomableGroup } from 'react-simple-maps';
 
 // ─────────────────────────────────────────────────────────────────────
 // Sidebar
@@ -24,7 +23,6 @@ function AdminSidebar({ activeView, setActiveView, user, onLogout, pendingCount 
     const menuItems = [
         { id: 'overview', label: 'Overview', icon: LayoutDashboard },
         { id: 'warehouses', label: 'Warehouses', icon: Warehouse, badge: pendingCount || null },
-        { id: 'analytics', label: 'Geo Analytics', icon: Globe },
     ];
 
     return (
@@ -255,7 +253,7 @@ export default function AdminDashboard({ user, onLogout }) {
                                 exit={{ x: 20, opacity: 0 }}
                                 transition={{ duration: 0.2 }}
                             >
-                                {activeView === 'overview' ? 'Overview' : activeView === 'analytics' ? 'Geo Analytics' : 'Warehouse Listings'}
+                                {activeView === 'overview' ? 'Overview' : 'Warehouse Listings'}
                             </motion.h2>
                         </AnimatePresence>
                     </div>
@@ -302,16 +300,6 @@ export default function AdminDashboard({ user, onLogout }) {
                                     expandedRow={expandedRow}
                                     setExpandedRow={setExpandedRow}
                                 />
-                            </motion.div>
-                        ) : activeView === 'analytics' ? (
-                            <motion.div
-                                key="analytics"
-                                initial={{ x: 60, opacity: 0 }}
-                                animate={{ x: 0, opacity: 1 }}
-                                exit={{ x: -60, opacity: 0 }}
-                                transition={{ duration: 0.3, type: 'tween' }}
-                            >
-                                <GeoAnalyticsView />
                             </motion.div>
                         ) : null}
                     </AnimatePresence>
@@ -804,187 +792,3 @@ function EmptyState({ filter, search }) {
     );
 }
 
-function GeoAnalyticsView() {
-    const [dateRange, setDateRange] = useState('all');
-    const [allDocs, setAllDocs] = useState([]);
-    const [countryMap, setCountryMap] = useState({});
-    const [stats, setStats] = useState({ unique: 0, views: 0, countries: 0 });
-    const [top, setTop] = useState([]);
-    const [tip, setTip] = useState({ show: false, text: '', x: 0, y: 0 });
-    const [loading, setLoading] = useState(true);
-
-    const ISO2_NUM = {
-        IN: '356', US: '840', GB: '826', DE: '276', FR: '250', CN: '156', BR: '76', CA: '124',
-        AU: '36', JP: '392', RU: '643', ZA: '710', MX: '484', AR: '32', NG: '566', EG: '818',
-        ID: '360', PK: '586', BD: '50', PH: '608', VN: '704', TR: '792', IR: '364', SA: '682',
-        AE: '784', KR: '410', TH: '764', MY: '458', SG: '702', IT: '380', ES: '724', PL: '616',
-        NL: '528', SE: '752', NO: '578', DK: '208', FI: '246', CH: '756', AT: '40', BE: '56',
-        PT: '620', GR: '300', CZ: '203', HU: '348', RO: '642', UA: '804', IL: '376', OM: '512',
-        KW: '414', QA: '634', IQ: '368', JO: '400', LB: '422', MA: '504', TN: '788', DZ: '12',
-        LY: '434', SD: '729', ET: '231', KE: '404', TZ: '834', GH: '288', SN: '686', CM: '120',
-        ZM: '894', ZW: '716', NZ: '554', CL: '152', CO: '170', PE: '604', VE: '862', EC: '218',
-    };
-
-    useEffect(() => {
-        (async () => {
-            try {
-                const { collection, getDocs, query, orderBy } = await import('firebase/firestore');
-                const snap = await getDocs(query(collection(db, 'visitors'), orderBy('timestamp', 'desc')));
-                const docs = snap.docs.map(d => d.data());
-                setAllDocs(docs);
-            } catch (e) { console.error(e); }
-            setLoading(false);
-        })();
-    }, []);
-
-    useEffect(() => {
-        const now = new Date();
-        const filteredDocs = allDocs.filter(d => {
-            if (dateRange === 'all') return true;
-            if (!d.date) return false;
-            const docDate = new Date(d.date);
-            if (dateRange === 'today') {
-                return d.date === now.toISOString().slice(0, 10);
-            }
-            if (dateRange === 'week') {
-                const weekAgo = new Date(now);
-                weekAgo.setDate(weekAgo.getDate() - 7);
-                return docDate >= weekAgo;
-            }
-            if (dateRange === 'month') {
-                const monthAgo = new Date(now);
-                monthAgo.setMonth(monthAgo.getMonth() - 1);
-                return docDate >= monthAgo;
-            }
-            return true;
-        });
-
-        const byC = {};
-        filteredDocs.forEach(d => {
-            const k = d.countryCode || 'XX';
-            if (!byC[k]) byC[k] = { name: d.country || 'Unknown', code: k, v: 0, pv: 0 };
-            byC[k].v += 1;
-            byC[k].pv += d.pageviews || 1;
-        });
-        setCountryMap(byC);
-        setStats({ unique: filteredDocs.length, views: filteredDocs.reduce((s, d) => s + (d.pageviews || 1), 0), countries: Object.keys(byC).length });
-        setTop(Object.values(byC).sort((a, b) => b.v - a.v).slice(0, 10));
-    }, [allDocs, dateRange]);
-
-    const maxV = Math.max(...Object.values(countryMap).map(c => c.v), 1);
-    const getFill = (geoId) => {
-        const iso2 = Object.entries(ISO2_NUM).find(([, n]) => Number(n) === Number(geoId))?.[0];
-        if (!iso2 || !countryMap[iso2]) return '#e2e8f0';
-        const t = countryMap[iso2].v / maxV;
-        return `rgb(${Math.round(234 - t * 180)},${Math.round(179 - t * 100)},${Math.round(8 + t * 220)})`;
-    };
-
-
-    const GEO_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json';
-
-    return (
-        <div className="space-y-5">
-            <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs text-slate-500 font-medium">Period:</span>
-                {[
-                    { key: 'today', label: 'Today' },
-                    { key: 'week', label: 'Last 7 Days' },
-                    { key: 'month', label: 'Last 30 Days' },
-                    { key: 'all', label: 'All Time' },
-                ].map(opt => (
-                    <button
-                        key={opt.key}
-                        onClick={() => setDateRange(opt.key)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${dateRange === opt.key
-                            ? 'bg-orange-600 text-white shadow-sm'
-                            : 'bg-white border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50'
-                            }`}
-                    >
-                        {opt.label}
-                    </button>
-                ))}
-            </div>
-            <div className="grid grid-cols-3 gap-4">
-                {[['Unique Visitors', stats.unique, 'text-blue-600', 'bg-blue-50 border-blue-100'],
-                ['Total Page Views', stats.views, 'text-emerald-600', 'bg-emerald-50 border-emerald-100'],
-                ['Countries', stats.countries, 'text-orange-600', 'bg-orange-50 border-orange-100']
-                ].map(([l, v, tc, bg], i) => (
-                    <div key={i} className={`${bg} border rounded-2xl p-5 shadow-sm`}>
-                        <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-2">{l}</p>
-                        <p className={`text-4xl font-bold ${tc}`}>{Number(v).toLocaleString()}</p>
-                    </div>
-                ))}
-            </div>
-
-            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-                <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Visitor World Map</h2>
-                {loading ? (
-                    <div className="flex items-center justify-center h-64 gap-3 text-slate-400">
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        Loading visitor data...
-                    </div>
-                ) : (
-                    <div className="relative">
-                        <ComposableMap projectionConfig={{ scale: 145 }} style={{ width: '100%', height: '400px' }}>
-                            <ZoomableGroup>
-                                <Geographies geography={GEO_URL}>
-                                    {({ geographies }) => geographies.map(geo => {
-                                        const iso2 = Object.entries(ISO2_NUM).find(([, n]) => Number(n) === Number(geo.id))?.[0];
-                                        const data = iso2 ? countryMap[iso2] : null;
-                                        return (
-                                            <Geography key={geo.rsmKey} geography={geo}
-                                                fill={getFill(geo.id)} stroke="#cbd5e1" strokeWidth={0.5}
-                                                style={{ default: { outline: 'none' }, hover: { outline: 'none', fill: '#f97316', cursor: 'pointer' }, pressed: { outline: 'none' } }}
-                                                onMouseMove={e => setTip({ show: true, text: data ? `${data.name}: ${data.v} visitor${data.v !== 1 ? 's' : ''}` : (geo.properties?.name || 'No data'), x: e.clientX, y: e.clientY })}
-                                                onMouseLeave={() => setTip(t => ({ ...t, show: false }))}
-                                            />
-                                        );
-                                    })}
-                                </Geographies>
-                            </ZoomableGroup>
-                        </ComposableMap>
-                        {tip.show && (
-                            <div className="fixed z-50 bg-slate-900 text-white text-xs px-3 py-2 rounded-lg pointer-events-none shadow-xl"
-                                style={{ top: tip.y - 40, left: tip.x + 12 }}>
-                                {tip.text}
-                            </div>
-                        )}
-                    </div>
-                )}
-                <div className="flex items-center justify-end gap-2 mt-2">
-                    <span className="text-[10px] text-slate-400">Fewer</span>
-                    <div className="h-2 w-28 rounded-full" style={{ background: 'linear-gradient(to right,#e2e8f0,#f97316)' }} />
-                    <span className="text-[10px] text-slate-400">More</span>
-                </div>
-            </div>
-
-            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-                <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Top Countries</h2>
-                {top.length === 0 ? (
-                    <p className="text-slate-400 text-sm text-center py-8">No visitor data yet. Will populate after deployment to Vercel.</p>
-                ) : (
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="text-[10px] text-slate-400 uppercase tracking-widest border-b border-slate-100">
-                                {['#', 'Country', 'Unique Visitors', 'Page Views', 'Share'].map((h, i) => (
-                                    <th key={i} className={`pb-3 font-semibold ${i > 1 ? 'text-right' : 'text-left'}`}>{h}</th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {top.map((c, i) => (
-                                <tr key={c.code} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
-                                    <td className="py-3 text-slate-400 text-xs">{i + 1}</td>
-                                    <td className="py-3 font-semibold text-slate-800">{c.name}</td>
-                                    <td className="py-3 text-right text-orange-600 font-bold">{c.v.toLocaleString()}</td>
-                                    <td className="py-3 text-right text-slate-500">{c.pv.toLocaleString()}</td>
-                                    <td className="py-3 text-right text-slate-400 text-xs">{((c.v / stats.unique) * 100).toFixed(1)}%</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                )}
-            </div>
-        </div>
-    );
-}
