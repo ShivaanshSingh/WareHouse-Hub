@@ -93,7 +93,7 @@ export default function MerchantDashboard({ user, onLogout, onOpenChat }) {
             setRealWarehouses(whList);
             setWarehousesLoading(false);
         }, (error) => {
-            console.error("Error fetching warehouses:", error);
+
             setWarehousesLoading(false);
         });
 

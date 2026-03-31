@@ -28,7 +28,7 @@ function SearchResults() {
         const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setAllWarehouses(data);
       } catch (error) {
-        console.error("Error fetching warehouses:", error);
+
       } finally {
         setLoading(false);
       }

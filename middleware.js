@@ -54,7 +54,7 @@ export function middleware(request) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...headersObj }
   }).catch((e) => {
-    console.error('Tracking fetch failed:', e);
+
   });
 
   return NextResponse.next();

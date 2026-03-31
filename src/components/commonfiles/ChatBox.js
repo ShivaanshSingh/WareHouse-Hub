@@ -63,7 +63,7 @@ export default function ChatBox({ warehouse, user, onClose }) {
           }
         })
       } catch (error) {
-        console.error("Error initializing chat:", error)
+
       }
     }
 
@@ -89,7 +89,7 @@ export default function ChatBox({ warehouse, user, onClose }) {
         user.userType || 'merchant'
       )
     } catch (error) {
-      console.error("Error sending message:", error)
+
     }
   }
 

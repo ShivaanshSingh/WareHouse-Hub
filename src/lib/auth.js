@@ -101,7 +101,7 @@ export const checkEmailExists = async (email) => {
     const methods = await fetchSignInMethodsForEmail(auth, email);
     return methods.length > 0;
   } catch (error) {
-    console.error('Error checking email:', error);
+
     return false;
   }
 };
@@ -187,7 +187,7 @@ export const registerUser = async (email, password, name, userType, company = ''
       nameChanged: false
     };
   } catch (error) {
-    console.error('Error registering user:', error);
+
     throw handleAuthError(error);
   }
 };
@@ -272,7 +272,7 @@ export const loginUser = async (email, password, userType) => {
     }
   } catch (error) {
     if (!error.code || !['auth/user-not-registered', 'auth/wrong-user-type'].includes(error.code)) {
-      console.error('Error logging in:', error);
+
     }
     throw handleAuthError(error);
   } finally {
@@ -375,7 +375,7 @@ export const loginWithGoogle = async (userType, isSignIn = false) => {
     };
   } catch (error) {
     if (!error.code || !['auth/user-not-registered', 'auth/popup-closed-by-user', 'auth/wrong-user-type'].includes(error.code)) {
-      console.error('Error with Google sign-in:', error);
+
     }
     throw handleAuthError(error);
   } finally {
@@ -391,7 +391,7 @@ export const logoutUser = async () => {
   try {
     await signOut(auth);
   } catch (error) {
-    console.error('Error logging out:', error);
+
     throw handleAuthError(error);
   }
 };
@@ -408,7 +408,7 @@ export const resetPassword = async (email) => {
   try {
     await sendPasswordResetEmail(auth, email);
   } catch (error) {
-    console.error('Error sending password reset email:', error);
+
     throw handleAuthError(error);
   }
 };
@@ -426,7 +426,7 @@ export const getUserData = async (uid) => {
     }
     return null;
   } catch (error) {
-    console.error('Error fetching user data:', error);
+
     throw error;
   }
 };
@@ -471,7 +471,7 @@ export const updateUserProfile = async (uid, updates) => {
     const updatedDoc = await getDoc(doc(db, 'users', uid));
     return updatedDoc.data();
   } catch (error) {
-    console.error('Error updating user profile:', error);
+
     throw error;
   }
 };
@@ -589,7 +589,7 @@ export const refreshEmailVerification = async () => {
 
     return user.emailVerified;
   } catch (error) {
-    console.error('Error refreshing email verification:', error);
+
     throw error;
   }
 };

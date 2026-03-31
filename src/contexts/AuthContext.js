@@ -94,7 +94,7 @@ export const AuthProvider = ({ children }) => {
               });
             }
           } catch (err) {
-            console.error('Error fetching user data:', err);
+
             setError(err.message);
             pendingRetry = false;
           } finally {

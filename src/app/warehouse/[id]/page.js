@@ -12,11 +12,13 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { checkAccessStatus } from '@/lib/messaging';
+import { decodeWarehouseId } from '@/lib/warehouseId';
 import ChatBox from '@/components/commonfiles/ChatBox';
 import OptimizedImage from '@/components/commonfiles/OptimizedImage';
 
 export default function WarehouseDetailPage({ params }) {
-  const { id } = use(params);
+  const { id: encodedId } = use(params);
+  const id = decodeWarehouseId(encodedId);
   const { user } = useAuth();
   const [warehouse, setWarehouse] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -52,7 +54,7 @@ export default function WarehouseDetailPage({ params }) {
           setWarehouse({ id: docSnap.id, ...docSnap.data() });
         }
       } catch (error) {
-        console.error("Error fetching warehouse:", error);
+
       } finally {
         setLoading(false);
       }
@@ -116,18 +118,16 @@ export default function WarehouseDetailPage({ params }) {
               transition={{ delay: 0.1 }}
             >
               <div className="relative aspect-video bg-slate-100 overflow-hidden group">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={activePhoto}
-                    className="absolute inset-0"
-                    initial={{ opacity: 0, scale: 1.1 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.4, ease: "easeOut" }}
+                {/* Preload ALL images at once — only the active one is visible */}
+                {Object.keys(photoLabels).map((key) => photos[key] && (
+                  <div
+                    key={key}
+                    className="absolute inset-0 transition-opacity duration-300 ease-in-out"
+                    style={{ opacity: activePhoto === key ? 1 : 0, zIndex: activePhoto === key ? 1 : 0 }}
                   >
                     <OptimizedImage
-                      src={photos[activePhoto]}
-                      alt={photoLabels[activePhoto]}
+                      src={photos[key]}
+                      alt={photoLabels[key]}
                       fill
                       sizes="(max-width: 1024px) 100vw, 66vw"
                       quality={85}
@@ -135,10 +135,10 @@ export default function WarehouseDetailPage({ params }) {
                       className="w-full h-full"
                       imgClassName="object-cover"
                     />
-                  </motion.div>
-                </AnimatePresence>
+                  </div>
+                ))}
                 
-                <div className="absolute top-6 left-6 flex flex-col gap-2">
+                <div className="absolute top-6 left-6 flex flex-col gap-2" style={{ zIndex: 2 }}>
                   <motion.div 
                     initial={{ x: -20, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
@@ -171,6 +171,7 @@ export default function WarehouseDetailPage({ params }) {
                       fill
                       sizes="150px"
                       quality={60}
+                      priority
                       className="w-full h-full"
                       imgClassName="object-cover"
                     />

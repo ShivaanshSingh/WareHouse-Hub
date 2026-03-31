@@ -41,7 +41,7 @@ export async function trackVisitor(geoData) {
     }, { merge: true });
     return { status: 'tracked', docId };
   } catch (err) {
-    console.error('[geoTracker] Firestore write failed:', err);
+
     throw err;
   }
 }

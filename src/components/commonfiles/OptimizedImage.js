@@ -9,7 +9,7 @@ import Image from 'next/image';
  * Uses next/image under the hood for:
  *  • Automatic WebP / AVIF conversion
  *  • Responsive srcsets (serves right size for viewport)
- *  • Native lazy-loading with a smooth blur-up shimmer
+ *  • Eager loading by default for instant display
  *
  * Props:
  *  src       — image URL (Firebase or any external)
@@ -40,13 +40,15 @@ export default function OptimizedImage({
   fallback = PLACEHOLDER_SRC,
 }) {
   const [imgSrc, setImgSrc] = useState(src || fallback);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
 
   const handleError = () => {
-    if (imgSrc !== fallback) setImgSrc(fallback);
+    if (!hasError) {
+      setHasError(true);
+      setImgSrc(fallback);
+    }
   };
 
-  // Wrapper classes for the shimmer effect
   const wrapperClass = `relative overflow-hidden ${className}`;
 
   const imageProps = {
@@ -55,21 +57,14 @@ export default function OptimizedImage({
     quality,
     sizes,
     priority,
+    loading: priority ? undefined : 'eager',
     onError: handleError,
-    onLoad: () => setIsLoaded(true),
-    className: `transition-opacity duration-500 ease-in-out ${
-      isLoaded ? 'opacity-100' : 'opacity-0'
-    } ${imgClassName}`,
+    className: imgClassName,
     style: fill ? { objectFit: 'cover' } : undefined,
   };
 
   return (
     <div className={wrapperClass}>
-      {/* Shimmer placeholder */}
-      {!isLoaded && (
-        <div className="absolute inset-0 bg-slate-200 animate-pulse rounded-inherit" />
-      )}
-
       {fill ? (
         <Image {...imageProps} fill />
       ) : (

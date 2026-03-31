@@ -130,7 +130,7 @@ function getClientIp(request) {
 
     // 3. Cannot determine client — log a warning so operators can detect
     //    potential bypasses, then return null (check() will skip rate limiting).
-    console.warn('[rateLimit] Could not determine client IP — rate limiting skipped for this request.');
+
     return null;
 }
 

@@ -42,7 +42,7 @@ export default function DashboardHome({ setActiveTab, user }) {
           .sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0));
         setWarehouses(data);
       } catch (e) {
-        console.error('Dashboard fetch error:', e);
+
       } finally {
         setLoading(false);
       }
@@ -60,7 +60,7 @@ export default function DashboardHome({ setActiveTab, user }) {
       await Promise.all(promises);
       setWarehouses([]);
     } catch (e) {
-      console.error('Clear all error:', e);
+
       alert('Failed to clear some warehouses.');
     } finally {
       setLoading(false);

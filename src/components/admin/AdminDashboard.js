@@ -124,7 +124,7 @@ export default function AdminDashboard({ user, onLogout }) {
                 setError('');
             },
             (err) => {
-                console.error('AdminDashboard snapshot error:', err);
+
                 setError('Failed to load warehouses. Check your connection.');
                 setLoading(false);
             }
@@ -150,7 +150,7 @@ export default function AdminDashboard({ user, onLogout }) {
                 newStatus === 'approved' ? 'success' : 'error'
             );
         } catch (err) {
-            console.error('Error updating status:', err);
+
             showToast('Action failed. Please try again.', 'error');
         } finally {
             setActionLoading(prev => ({ ...prev, [warehouseId]: null }));
@@ -342,7 +342,7 @@ function OverviewView({ counts, warehouses }) {
             const result = await migrateWarehouseFields();
             setMigrateResult(result);
         } catch (err) {
-            console.error('Migration error:', err);
+
             setMigrateResult({ error: err.message });
         } finally {
             setMigrating(false);

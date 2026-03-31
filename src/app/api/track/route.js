@@ -7,7 +7,7 @@ export async function POST(request) {
     const result = await trackVisitor(geo);
     return NextResponse.json({ ok: true, ...result });
   } catch (err) {
-    console.error('[track] error:', err);
+
     return NextResponse.json({ ok: false }, { status: 500 });
   }
 }

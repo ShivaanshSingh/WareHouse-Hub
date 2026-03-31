@@ -71,7 +71,7 @@ export default function Inquiries() {
       setInquiries(data);
       setLoading(false);
     }, (err) => {
-      console.error('Conversations listener error:', err);
+
       setLoading(false);
     });
 
@@ -96,7 +96,7 @@ export default function Inquiries() {
         setTimeout(() => setShowCelebration(false), 5000);
       }
     } catch (e) {
-      console.error('Error moving card:', e);
+
     } finally {
       setMovingId(null);
     }
@@ -109,7 +109,7 @@ export default function Inquiries() {
       await grantContactAccess(conv.id);
       // alert('Contact access granted to ' + (conv.merchantName || 'Merchant'));
     } catch (e) {
-      console.error('Grant access error:', e);
+
     } finally {
       setGrantingId(null);
     }
@@ -123,7 +123,7 @@ export default function Inquiries() {
     try {
       await deleteConversation(conv.id);
     } catch (e) {
-      console.error('Delete deal error:', e);
+
       alert('Failed to delete the deal. Please try again.');
     } finally {
       setDeletingId(null);

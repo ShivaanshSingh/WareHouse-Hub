@@ -73,9 +73,7 @@ if (
 // to onAuthStateChanged — otherwise the listener can fire before the
 // token is loaded, causing the user to be redirected to the landing page.
 export const persistenceReady = typeof window !== 'undefined'
-  ? setPersistence(auth, browserLocalPersistence).catch(err =>
-    console.warn('Firebase: failed to set auth persistence', err)
-  )
+  ? setPersistence(auth, browserLocalPersistence).catch(() => {})
   : Promise.resolve();
 
 export const db = getFirestore(app);

@@ -2,13 +2,14 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { MapPin, Ruler, User, Layers, CheckCircle2 } from 'lucide-react';
 import OptimizedImage from './OptimizedImage';
+import { encodeWarehouseId } from '@/lib/warehouseId';
 
 const WarehouseCard = ({ id, title, location, price, area, type, imageUrl, owner, facilities, amenities, category }) => {
   const router = useRouter();
 
   return (
     <div 
-      onClick={() => id && router.push(`/warehouse/${id}`)}
+      onClick={() => id && router.push(`/warehouse/${encodeWarehouseId(id)}`)}
       className="group bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer"
     >
       {/* Image Section */}

@@ -302,7 +302,7 @@ export default function AddWarehouse({ setActiveTab }) {
       setOtp('');
       startCountdown();
     } catch (error) {
-      console.error('Send OTP error:', error);
+
       setOtpError(error.message);
     } finally {
       setSendingOtp(false);
@@ -325,7 +325,7 @@ export default function AddWarehouse({ setActiveTab }) {
       if (countdownRef.current) clearInterval(countdownRef.current);
       setResendCountdown(0);
     } catch (error) {
-      console.error('Verify OTP error:', error);
+
       setOtpError(error.message);
     } finally {
       setVerifyingOtp(false);
@@ -365,7 +365,7 @@ export default function AddWarehouse({ setActiveTab }) {
           if (onProgress) onProgress(progress);
         },
         (error) => {
-          console.error('Storage Upload Error:', error);
+
           reject(error);
         },
         async () => {
@@ -422,7 +422,7 @@ export default function AddWarehouse({ setActiveTab }) {
       const safeWarehouseName = warehouseDetails.warehouseName.trim().replace(/[^a-zA-Z0-9-]/g, '_');
       const basePath = `warehouse_photos/${ownerDetails.email.trim()}/${safeWarehouseName}`;
 
-      console.log('Starting Firebase Storage uploads...', { photos });
+
       
       // Calculate total files to upload
       const filesToUpload = [photos.frontView, photos.insideView, photos.dockArea, photos.rateCard].filter(f => f !== null);
@@ -445,8 +445,7 @@ export default function AddWarehouse({ setActiveTab }) {
         uploadFile(photos.rateCard, `${basePath}/rate_card`, (pct) => handleProgress('rateCard', pct))
       ]);
 
-      console.log('Uploads complete! URLs:', { frontViewURL, insideViewURL, dockAreaURL, rateCardURL });
-      console.log('Saving doc to Firestore...');
+
 
       // Build the Firestore document
       const docData = {
@@ -521,10 +520,10 @@ export default function AddWarehouse({ setActiveTab }) {
 
       await addDoc(collection(db, 'warehouse_details'), docData);
       
-      console.log('Successfully saved to Firestore!');
+
       setSubmitted(true);
     } catch (err) {
-      console.error('Error saving warehouse:', err);
+
       // Give more detailed feedback based on standard Firebase error codes
       if (err.code === 'storage/unauthorized') {
         setSubmitError('Upload blocked: auth token rejected by Storage. Please log out, log in again, and retry.');

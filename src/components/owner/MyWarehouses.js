@@ -36,7 +36,7 @@ export default function MyWarehouses({ setActiveTab }) {
           .sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0));
         setWarehouses(data);
       } catch (err) {
-        console.error('Error fetching warehouses:', err);
+
         setError('Failed to load warehouses. Please refresh.');
       } finally {
         setLoading(false);
@@ -184,7 +184,7 @@ function WarehouseCard({ warehouse: w, onDelete }) {
       await updateDoc(doc(db, 'warehouse_details', w.id), { isOnline: newValue });
       setIsOnline(newValue);
     } catch (err) {
-      console.error('Failed to update availability:', err);
+
     } finally {
       setToggling(false);
     }
@@ -198,7 +198,7 @@ function WarehouseCard({ warehouse: w, onDelete }) {
       await deleteDoc(doc(db, 'warehouse_details', w.id));
       if (onDelete) onDelete(w.id);
     } catch (err) {
-      console.error('Delete error:', err);
+
       alert('Failed to delete warehouse. Please try again.');
     } finally {
       setIsDeleting(false);

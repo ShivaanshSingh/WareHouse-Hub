@@ -81,7 +81,7 @@ export default function Availability() {
       const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       setWarehouses(data);
     } catch (err) {
-      console.error('Error fetching warehouses:', err);
+
     }
   }, [user?.uid]);
 
@@ -104,7 +104,7 @@ export default function Availability() {
       });
       setAvailability(map);
     } catch (err) {
-      console.error('Error fetching availability:', err);
+
     }
   }, [user?.uid, monthKey]);
 
@@ -219,9 +219,7 @@ export default function Availability() {
           updated_at: new Date().toISOString(),
         };
 
-        console.log(`[Availability] Saving → ${warehouseName} | month=${saveMonth} | date=${modalDate} | status=${status}`);
         await setDoc(ref, payload, { merge: true });
-        console.log(`[Availability] ✓ Saved ${warehouseName}`);
       }
 
       // ── Delete warehouses reverted to "Not Set" ──
@@ -230,9 +228,7 @@ export default function Availability() {
         const docId = availDocId(w.id, modalDate);
         const ref = doc(db, 'warehouse_availability', saveMonth, 'entries', docId);
 
-        console.log(`[Availability] Clearing → ${warehouseName} | date=${modalDate}`);
         await deleteDoc(ref);
-        console.log(`[Availability] ✓ Cleared ${warehouseName}`);
       }
 
       // Update local state
@@ -251,7 +247,7 @@ export default function Availability() {
       showToast(`${totalChanges} warehouse${totalChanges > 1 ? 's' : ''} updated!`, 'success');
       closeModal();
     } catch (err) {
-      console.error('Error saving availability:', err);
+
       const errMsg = err?.code
         ? `Firestore error: ${err.code} — ${err.message}`
         : (err?.message || 'Unknown error');
