@@ -1,6 +1,7 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { MapPin, Ruler, User, Layers, CheckCircle2 } from 'lucide-react';
+import OptimizedImage from './OptimizedImage';
 
 const WarehouseCard = ({ id, title, location, price, area, type, imageUrl, owner, facilities, amenities, category }) => {
   const router = useRouter();
@@ -12,16 +13,20 @@ const WarehouseCard = ({ id, title, location, price, area, type, imageUrl, owner
     >
       {/* Image Section */}
       <div className="relative aspect-video w-full overflow-hidden">
-        <img 
-          src={imageUrl || "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80"} 
-          alt={title} 
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+        <OptimizedImage
+          src={imageUrl}
+          alt={title}
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+          quality={70}
+          className="w-full h-full"
+          imgClassName="group-hover:scale-105 transition-transform duration-500 object-cover"
         />
         {/* Floating Badges */}
-        <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-semibold text-gray-700 shadow-sm">
+        <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-semibold text-gray-700 shadow-sm z-10">
           {type || category || "General"}
         </div>
-        <div className="absolute top-3 left-3 bg-green-500 text-white px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider shadow-sm flex items-center gap-1">
+        <div className="absolute top-3 left-3 bg-green-500 text-white px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider shadow-sm flex items-center gap-1 z-10">
           <CheckCircle2 className="w-3 h-3 mr-1" /> Verified
         </div>
       </div>

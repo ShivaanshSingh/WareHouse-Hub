@@ -13,6 +13,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { checkAccessStatus } from '@/lib/messaging';
 import ChatBox from '@/components/commonfiles/ChatBox';
+import OptimizedImage from '@/components/commonfiles/OptimizedImage';
 
 export default function WarehouseDetailPage({ params }) {
   const { id } = use(params);
@@ -116,16 +117,25 @@ export default function WarehouseDetailPage({ params }) {
             >
               <div className="relative aspect-video bg-slate-100 overflow-hidden group">
                 <AnimatePresence mode="wait">
-                  <motion.img 
+                  <motion.div
                     key={activePhoto}
-                    src={photos[activePhoto] || "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=1200&q=80"} 
-                    alt={photoLabels[activePhoto]} 
-                    className="w-full h-full object-cover"
+                    className="absolute inset-0"
                     initial={{ opacity: 0, scale: 1.1 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ duration: 0.4, ease: "easeOut" }}
-                  />
+                  >
+                    <OptimizedImage
+                      src={photos[activePhoto]}
+                      alt={photoLabels[activePhoto]}
+                      fill
+                      sizes="(max-width: 1024px) 100vw, 66vw"
+                      quality={85}
+                      priority
+                      className="w-full h-full"
+                      imgClassName="object-cover"
+                    />
+                  </motion.div>
                 </AnimatePresence>
                 
                 <div className="absolute top-6 left-6 flex flex-col gap-2">
@@ -155,7 +165,15 @@ export default function WarehouseDetailPage({ params }) {
                       : 'border-white hover:border-orange-200 opacity-70 hover:opacity-100 hover:scale-[1.03]'
                     }`}
                   >
-                    <img src={photos[key]} alt="" className="w-full h-full object-cover" />
+                    <OptimizedImage
+                      src={photos[key]}
+                      alt={photoLabels[key]}
+                      fill
+                      sizes="150px"
+                      quality={60}
+                      className="w-full h-full"
+                      imgClassName="object-cover"
+                    />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                     <div className="absolute inset-x-0 bottom-0 py-2 text-[9px] font-black text-white text-center uppercase tracking-tighter backdrop-blur-sm bg-black/30">
                       {photoLabels[key].split(' ')[0]}

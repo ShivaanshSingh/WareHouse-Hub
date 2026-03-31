@@ -10,6 +10,7 @@ import { logoutUser, updateUserProfile, uploadProfileImage, sendVerificationEmai
 import { db } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import ChatBox from '../commonfiles/ChatBox';
+import OptimizedImage from '../commonfiles/OptimizedImage';
 import { Inbox, MessageCircle, Clock as ClockIcon, ExternalLink } from 'lucide-react';
 
 export default function MerchantDashboard({ user, onLogout, onOpenChat }) {
@@ -690,10 +691,15 @@ export default function MerchantDashboard({ user, onLogout, onOpenChat }) {
                             exit={{ scale: 0.9, opacity: 0, y: 20 }}
                         >
                             <div className="relative h-80">
-                                <img 
-                                    src={selectedWarehouse.photos?.frontView || selectedWarehouse.images?.[0]} 
-                                    alt={selectedWarehouse.warehouseName} 
-                                    className="w-full h-full object-cover" 
+                                <OptimizedImage
+                                    src={selectedWarehouse.photos?.frontView || selectedWarehouse.images?.[0]}
+                                    alt={selectedWarehouse.warehouseName}
+                                    fill
+                                    sizes="(max-width: 768px) 100vw, 800px"
+                                    quality={80}
+                                    priority
+                                    className="w-full h-full"
+                                    imgClassName="object-cover"
                                 />
                                 <button
                                     onClick={() => setSelectedWarehouse(null)}
