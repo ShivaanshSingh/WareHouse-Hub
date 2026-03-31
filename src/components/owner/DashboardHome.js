@@ -11,6 +11,7 @@ import {
   MapPin, Tag, CheckCircle
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import OptimizedImage from '../commonfiles/OptimizedImage';
 
 // Animation variants
 const containerVariants = {
@@ -176,7 +177,15 @@ export default function DashboardHome({ setActiveTab, user }) {
                   {/* Thumbnail */}
                   <div className="w-14 h-14 rounded-xl bg-slate-100 overflow-hidden shrink-0">
                     {w.photos?.frontView
-                      ? <img src={w.photos.frontView} alt="" className="w-full h-full object-cover" />
+                      ? <OptimizedImage
+                          src={w.photos.frontView}
+                          alt={w.warehouseName}
+                          fill
+                          sizes="56px"
+                          quality={60}
+                          className="w-full h-full"
+                          imgClassName="object-cover"
+                        />
                       : <div className="w-full h-full flex items-center justify-center text-slate-300"><Building2 className="w-5 h-5" /></div>}
                   </div>
 

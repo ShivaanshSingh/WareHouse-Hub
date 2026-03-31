@@ -10,6 +10,7 @@ import {
   Warehouse, ShieldCheck, Tag, Clock,
   ChevronDown, Wifi, WifiOff, CheckCircle2, XCircle,
 } from 'lucide-react';
+import OptimizedImage from '../commonfiles/OptimizedImage';
 
 export default function MyWarehouses({ setActiveTab }) {
   const { user } = useAuth();
@@ -192,7 +193,15 @@ function WarehouseCard({ warehouse: w }) {
       {/* Photo or placeholder */}
       <div className="h-48 relative bg-slate-100 flex items-center justify-center">
         {frontPhoto ? (
-          <img src={frontPhoto} alt={w.warehouseName} className="w-full h-full object-cover" />
+          <OptimizedImage
+            src={frontPhoto}
+            alt={w.warehouseName}
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+            quality={70}
+            className="w-full h-full"
+            imgClassName="object-cover"
+          />
         ) : (
           <div className="flex flex-col items-center gap-2 text-slate-300">
             <Warehouse className="w-12 h-12" />
