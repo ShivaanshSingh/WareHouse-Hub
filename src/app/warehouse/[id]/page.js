@@ -7,8 +7,10 @@ import Footer from '@/components/commonfiles/Footer';
 import { 
   MapPin, Ruler, Building2, Shield, Calendar, Clock, 
   CheckCircle2, ArrowLeft, Phone, Mail, BadgeCheck,
-  ChevronRight, Layers, Home, Info, User, Lock, MessageSquare
+  ChevronRight, Layers, Home, Info, User, Lock, MessageSquare,
+  Download, Loader2
 } from 'lucide-react';
+import { generateBrochure } from '@/lib/generateBrochure';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { checkAccessStatus } from '@/lib/messaging';
@@ -25,6 +27,7 @@ export default function WarehouseDetailPage({ params }) {
   const [activePhoto, setActivePhoto] = useState('frontView');
   const [hasAccess, setHasAccess] = useState(false);
   const [showChat, setShowChat] = useState(false);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
 
   useEffect(() => {
     const checkPermission = async () => {
@@ -338,9 +341,25 @@ export default function WarehouseDetailPage({ params }) {
                 
                 <motion.button 
                   whileHover={{ scale: 1.01 }}
-                  className="w-full py-4 bg-white border-2 border-slate-100 hover:border-slate-200 text-slate-700 font-bold rounded-2xl transition-all flex items-center justify-center gap-2"
+                  whileTap={{ scale: 0.98 }}
+                  disabled={generatingPdf}
+                  onClick={async () => {
+                    setGeneratingPdf(true);
+                    try {
+                      await generateBrochure(warehouse);
+                    } catch (err) {
+                      console.error('Brochure generation failed:', err);
+                    } finally {
+                      setGeneratingPdf(false);
+                    }
+                  }}
+                  className="w-full py-4 bg-white border-2 border-slate-100 hover:border-orange-200 text-slate-700 font-bold rounded-2xl transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-wait"
                 >
-                  Download Brochure
+                  {generatingPdf ? (
+                    <><Loader2 className="w-5 h-5 animate-spin text-orange-500" /> Generating PDF…</>
+                  ) : (
+                    <><Download className="w-5 h-5 text-orange-500" /> Download Brochure</>
+                  )}
                 </motion.button>
               </div>
               
