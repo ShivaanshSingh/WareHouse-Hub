@@ -142,7 +142,7 @@ function getClientIp(request) {
  */
 export const apiLimiter = rateLimit({
     interval: 60_000,           // 1 minute
-    limit: 10,                  // 10 requests per window
+    limit: 30,                  // 30 requests per window
     uniqueTokenPerInterval: 500,
 });
 

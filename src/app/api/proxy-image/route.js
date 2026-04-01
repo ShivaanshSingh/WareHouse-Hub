@@ -30,7 +30,7 @@ export async function GET(request) {
   const fetchWithRetry = async (targetUrl, retries = 1) => {
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
-        const res = await fetch(targetUrl, { signal: AbortSignal.timeout(30000) });
+        const res = await fetch(targetUrl, { signal: AbortSignal.timeout(8000) });
         return res;
       } catch (err) {
         if (attempt < retries) continue; // retry once
