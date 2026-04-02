@@ -215,6 +215,17 @@ body {
   background: #f97316;
 }
 
+/* GPU-layer promotion for sidebar transitions */
+.group.w-20 {
+  will-change: width;
+  contain: layout style;
+}
+
+/* Contain repaints to the main content area */
+main.flex-1 {
+  contain: layout style;
+}
+
 /* Focus states */
 *:focus-visible {
   outline: 2px solid #f97316;

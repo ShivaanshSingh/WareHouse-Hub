@@ -364,7 +364,7 @@ export default function AddWarehouse({ setActiveTab }) {
       <div className="flex-1 bg-[#f4f5f7] min-h-screen relative overflow-hidden z-0 flex items-center justify-center">
         {/* Ambient Glows */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-[-1]">
-          <motion.div animate={{ x: [0, 30, -20, 0], scale: [1, 1.1, 0.9, 1] }} transition={{ duration: 15, repeat: Infinity, ease: "linear" }} className="absolute top-[20%] left-[20%] w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[100px]" />
+          <div className="absolute top-[20%] left-[20%] w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[100px]" />
         </div>
         <motion.div initial={{ opacity: 0, y: 30, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} className="max-w-lg w-full mx-auto text-center z-10 p-6">
           <div className="bg-white/70 backdrop-blur-xl rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white p-12 relative overflow-hidden">
@@ -386,10 +386,10 @@ export default function AddWarehouse({ setActiveTab }) {
   return (
     <div className="flex-1 bg-[#f4f5f7] min-h-screen relative overflow-hidden z-0 pb-24">
       
-      {/* --- DRIFTING AMBIENT BACKGROUND GLOWS --- */}
+      {/* --- STATIC AMBIENT BACKGROUND GLOWS --- */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-[-1]">
-        <motion.div animate={{ x: [0, -30, 20, 0], y: [0, 40, -20, 0], scale: [1, 1.1, 0.9, 1] }} transition={{ duration: 20, repeat: Infinity, ease: "linear" }} className="absolute top-[5%] right-[-5%] w-[500px] h-[500px] bg-orange-500/10 rounded-full blur-[100px]" />
-        <motion.div animate={{ x: [0, 40, -30, 0], y: [0, -40, 20, 0], scale: [1, 1.05, 0.95, 1] }} transition={{ duration: 15, repeat: Infinity, ease: "linear" }} className="absolute bottom-[20%] left-[-10%] w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-[100px]" />
+        <div className="absolute top-[5%] right-[-5%] w-[500px] h-[500px] bg-orange-500/10 rounded-full blur-[100px]" />
+        <div className="absolute bottom-[20%] left-[-10%] w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-[100px]" />
       </div>
 
       <div className="max-w-5xl mx-auto px-6 sm:px-10 pt-10 relative z-10">
@@ -435,7 +435,7 @@ export default function AddWarehouse({ setActiveTab }) {
         </div>
 
         {/* ── Glass Form Card ── */}
-        <div className="bg-white/60 backdrop-blur-2xl rounded-[2.5rem] shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-white overflow-hidden min-h-[500px] flex flex-col relative">
+        <div className="bg-white/80 backdrop-blur-sm rounded-[2.5rem] shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-white overflow-hidden min-h-[500px] flex flex-col relative">
           
           {/* Subtle overlay gradient */}
           <div className="absolute inset-0 bg-gradient-to-b from-white/50 to-transparent pointer-events-none z-0" />

@@ -63,14 +63,14 @@ export default function MyWarehouses({ setActiveTab }) {
   return (
     <div className="flex-1 bg-[#f4f5f7] min-h-screen relative overflow-hidden z-0 pb-20">
       
-      {/* --- DRIFTING AMBIENT BACKGROUND GLOWS --- */}
+      {/* --- STATIC AMBIENT BACKGROUND GLOWS --- */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-[-1]">
-        <motion.div animate={{ x: [0, -30, 20, 0], y: [0, 40, -20, 0], scale: [1, 1.1, 0.9, 1] }} transition={{ duration: 20, repeat: Infinity, ease: "linear" }} className="absolute top-[5%] right-[-5%] w-[500px] h-[500px] bg-orange-500/10 rounded-full blur-[100px]" />
-        <motion.div animate={{ x: [0, 40, -30, 0], y: [0, -40, 20, 0], scale: [1, 1.05, 0.95, 1] }} transition={{ duration: 15, repeat: Infinity, ease: "linear" }} className="absolute bottom-[10%] left-[-10%] w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-[100px]" />
+        <div className="absolute top-[5%] right-[-5%] w-[500px] h-[500px] bg-orange-500/10 rounded-full blur-[100px]" />
+        <div className="absolute bottom-[10%] left-[-10%] w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-[100px]" />
       </div>
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center px-10 py-8 bg-white/60 backdrop-blur-xl border-b border-white sticky top-0 z-30 shadow-[0_4px_30px_rgba(0,0,0,0.02)]">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center px-10 py-8 bg-white/90 backdrop-blur-sm border-b border-white sticky top-0 z-30 shadow-[0_4px_30px_rgba(0,0,0,0.02)]">
         <div>
           <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Property Directory</h1>
           <p className="text-sm font-medium text-slate-500 mt-1">
@@ -206,8 +206,7 @@ function WarehouseCard({ warehouse: w, onDelete, variants }) {
     <motion.div 
       variants={variants}
       exit="exit"
-      whileHover={{ y: -8 }}
-      className="group relative flex flex-col bg-white/70 backdrop-blur-xl rounded-[2rem] border border-white hover:border-orange-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgba(249,115,22,0.12)] transition-all duration-500"
+      className="group relative flex flex-col bg-white/90 rounded-[2rem] border border-white hover:border-orange-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgba(249,115,22,0.12)] transition-shadow duration-300"
     >
       {/* --- FLOATING CONTROLS (Rendered OUTSIDE overflow-hidden to prevent clipping) --- */}
       <div className="absolute top-4 left-4 z-20" ref={dropRef}>
@@ -239,7 +238,7 @@ function WarehouseCard({ warehouse: w, onDelete, variants }) {
             </AnimatePresence>
           </div>
         ) : (
-          <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold border backdrop-blur-md shadow-sm ${badge.bg} ${badge.border} ${badge.text}`}>
+          <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold border shadow-sm ${badge.bg} ${badge.border} ${badge.text}`}>
             {/* Pulsing LED Dot */}
             <div className="relative flex h-2 w-2">
               <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${badge.glow}`}></span>
@@ -272,13 +271,13 @@ function WarehouseCard({ warehouse: w, onDelete, variants }) {
           <OptimizedImage src={frontPhoto} alt={w.warehouseName} fill sizes="(max-width: 768px) 100vw, 33vw" quality={80} className="w-full h-full" imgClassName="object-cover group-hover:scale-110 transition-transform duration-1000 ease-out" />
         ) : (
           // --- THE MAGIC PLACEHOLDER ---
-          <div className="w-full h-full relative bg-gradient-to-br from-slate-100 to-orange-50/50 overflow-hidden group-hover:scale-105 transition-transform duration-1000">
+          <div className="w-full h-full relative bg-gradient-to-br from-slate-100 to-orange-50/50 overflow-hidden">
             {/* Subtle dot pattern */}
             <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, black 1px, transparent 0)', backgroundSize: '16px 16px' }} />
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}>
+              <div>
                 <Warehouse className="w-14 h-14 text-orange-500/40 drop-shadow-lg mb-2" />
-              </motion.div>
+              </div>
               <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">No Image Provided</span>
             </div>
           </div>
@@ -347,7 +346,7 @@ function WarehouseCard({ warehouse: w, onDelete, variants }) {
 // Minimal Glass Stat Chip
 function StatChip({ icon, label, value }) {
   return (
-    <div className="flex items-center gap-3 p-3 bg-white/50 backdrop-blur-sm rounded-2xl border border-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.03)] hover:bg-white/80 transition-colors">
+    <div className="flex items-center gap-3 p-3 bg-white/70 rounded-2xl border border-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.03)] hover:bg-white/90 transition-colors">
       <div className="shrink-0 bg-white p-2 rounded-xl shadow-sm border border-slate-50">{icon}</div>
       <div className="min-w-0">
         <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest leading-none mb-1">{label}</p>

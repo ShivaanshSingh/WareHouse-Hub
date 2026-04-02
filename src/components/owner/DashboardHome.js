@@ -119,30 +119,14 @@ export default function DashboardHome({ setActiveTab }) {
   return (
     <div className="flex-1 bg-[#f4f5f7] min-h-screen relative overflow-hidden z-0">
       
-      {/* --- DRIFTING AMBIENT BACKGROUND GLOWS --- */}
+      {/* --- STATIC AMBIENT BACKGROUND GLOWS (no animation = no jank) --- */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-[-1]">
-        <motion.div 
-          animate={{ 
-            x: [0, 50, -20, 0], 
-            y: [0, -30, 40, 0],
-            scale: [1, 1.1, 0.9, 1] 
-          }} 
-          transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-          className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-orange-500/10 rounded-full blur-[100px]" 
-        />
-        <motion.div 
-          animate={{ 
-            x: [0, -40, 30, 0], 
-            y: [0, 40, -20, 0],
-            scale: [1, 1.05, 0.95, 1] 
-          }} 
-          transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
-          className="absolute bottom-[-10%] right-[-5%] w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[100px]" 
-        />
+        <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-orange-500/10 rounded-full blur-[100px]" />
+        <div className="absolute bottom-[-10%] right-[-5%] w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[100px]" />
       </div>
 
       {/* Header */}
-      <div className="flex justify-between items-center px-10 py-6 bg-white/60 backdrop-blur-xl border-b border-white sticky top-0 z-20 shadow-[0_4px_30px_rgba(0,0,0,0.02)]">
+      <div className="flex justify-between items-center px-10 py-6 bg-white/90 backdrop-blur-sm border-b border-white sticky top-0 z-20 shadow-[0_4px_30px_rgba(0,0,0,0.02)]">
         <div>
           <motion.h1 
             initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
@@ -193,7 +177,7 @@ export default function DashboardHome({ setActiveTab }) {
             { title: "Total Capacity", value: stats.totalArea / 1000, suffix: "k sq ft", color: "text-blue-500", glow: "rgba(59,130,246,0.4)", path: "M5 15 Q 25 25, 50 15 T 95 10", isDec: true },
             { title: "New Inquiries", value: 0, suffix: " this week", color: "text-rose-500", glow: "rgba(244,63,94,0.4)", path: "M5 10 Q 30 5, 50 20 T 95 15", isDec: false }
           ].map((card, i) => (
-            <motion.div key={i} variants={cardVariants} whileHover={{ y: -5 }} className="bg-white/60 backdrop-blur-xl p-6 border border-white hover:border-slate-200 rounded-3xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] transition-all relative overflow-hidden group">
+            <motion.div key={i} variants={cardVariants} className="bg-white/80 p-6 border border-white hover:border-slate-200 rounded-3xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] transition-shadow relative overflow-hidden group">
               <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 group-hover:text-slate-600 transition-colors">{card.title}</h3>
               <div className="flex justify-between items-end">
                 <div>
@@ -212,7 +196,7 @@ export default function DashboardHome({ setActiveTab }) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
           {/* Properties List */}
-          <motion.div variants={cardVariants} className="lg:col-span-2 bg-white/60 backdrop-blur-xl border border-white rounded-3xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] p-8 relative overflow-hidden">
+          <motion.div variants={cardVariants} className="lg:col-span-2 bg-white/80 border border-white rounded-3xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] p-8 relative overflow-hidden">
             <div className="flex justify-between items-center mb-8 relative z-10">
               <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
                 <Building2 size={18} className="text-orange-500" /> Your Properties
@@ -249,8 +233,7 @@ export default function DashboardHome({ setActiveTab }) {
                 warehouses.map((wh, index) => (
                   <motion.div 
                     initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 + (index * 0.1) }} key={wh.id} 
-                    whileHover={{ x: 4, scale: 1.01 }}
-                    className="flex items-center justify-between p-4 rounded-2xl border border-white shadow-sm hover:shadow-lg hover:shadow-orange-500/5 hover:border-orange-100 transition-all group bg-white/80 cursor-pointer"
+                    className="flex items-center justify-between p-4 rounded-2xl border border-white shadow-sm hover:shadow-lg hover:shadow-orange-500/5 hover:border-orange-100 transition-shadow group bg-white/80 cursor-pointer"
                   >
                     <div className="flex items-center gap-5">
                       <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-50 to-orange-100 border border-white text-orange-600 flex items-center justify-center font-bold text-lg group-hover:scale-110 group-hover:shadow-md transition-all duration-300">
@@ -288,7 +271,7 @@ export default function DashboardHome({ setActiveTab }) {
           </motion.div>
 
           {/* THE MAGIC GRAPH */}
-          <motion.div variants={cardVariants} className="bg-white/60 backdrop-blur-xl border border-white rounded-3xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] p-8 flex flex-col relative overflow-hidden group hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] transition-shadow duration-500">
+          <motion.div variants={cardVariants} className="bg-white/80 border border-white rounded-3xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] p-8 flex flex-col relative overflow-hidden group hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] transition-shadow duration-500">
             <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-2 flex items-center gap-2 relative z-10">
               <Activity size={18} className="text-blue-500" /> Space Overview
             </h2>
@@ -326,12 +309,12 @@ export default function DashboardHome({ setActiveTab }) {
                   initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 2.5, ease: "easeInOut", delay: 0.2 }}
                 />
 
-                {/* Radar Pulsing Nodes */}
+                {/* Static Data Nodes (no infinite pulsing) */}
                 {[
                   { cx: 300, cy: 100, delay: 1.5 }, { cx: 500, cy: 150, delay: 1.8 }, { cx: 800, cy: 50, delay: 2.1 }
                 ].map((node, i) => (
                   <g key={i}>
-                    <motion.circle cx={node.cx} cy={node.cy} r="25" fill="#f97316" opacity="0.15" animate={{ scale: [1, 2.5, 1], opacity: [0.5, 0, 0.5] }} transition={{ repeat: Infinity, duration: 2.5, delay: node.delay, ease: "easeInOut" }} />
+                    <circle cx={node.cx} cy={node.cy} r="15" fill="#f97316" opacity="0.12" />
                     <motion.circle cx={node.cx} cy={node.cy} r="8" fill="white" stroke="#f97316" strokeWidth="4" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: node.delay, type: 'spring', stiffness: 300 }} />
                   </g>
                 ))}
