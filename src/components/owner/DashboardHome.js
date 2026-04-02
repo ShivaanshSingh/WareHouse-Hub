@@ -1,326 +1,136 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { collection, query, where, getDocs, doc, deleteDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import React from 'react';
+import { MetricCard } from "../commonfiles/MetricCard";
 import { useAuth } from '@/contexts/AuthContext';
-import {
-  Building2, MessageSquare, Layers, Eye,
-  Plus, TrendingUp, ArrowRight, Activity,
-  DollarSign, MoreHorizontal, Loader2,
-  MapPin, Tag, CheckCircle, Trash2
+import { 
+  Lock, 
+  CheckCircle2, 
+  Layout, 
+  Star,
+  Home,
+  Plus
 } from 'lucide-react';
-import { motion } from 'framer-motion';
-import OptimizedImage from '../commonfiles/OptimizedImage';
 
-// Animation variants
-const containerVariants = {
-  hidden: { opacity: 1 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.12 } },
-};
-const boxVariants = {
-  hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 80, damping: 14 } },
-};
-
-export default function DashboardHome({ setActiveTab, user }) {
-  const { user: authUser } = useAuth();
-  const uid = authUser?.uid || user?.uid;
-
-  const [warehouses, setWarehouses] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  // ── Fetch this owner's warehouses ──────────────────────────
-  useEffect(() => {
-    if (!uid) return;
-    const fetch = async () => {
-      try {
-        const q = query(collection(db, 'warehouse_details'), where('ownerId', '==', uid));
-        const snap = await getDocs(q);
-        const data = snap.docs
-          .map(d => ({ id: d.id, ...d.data() }))
-          .sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0));
-        setWarehouses(data);
-      } catch (e) {
-
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetch();
-  }, [uid]);
-
-  const handleClearAll = async () => {
-    if (warehouses.length === 0) return;
-    if (!window.confirm(`Are you sure you want to delete ALL ${warehouses.length} warehouses? This cannot be undone.`)) return;
-
-    setLoading(true);
-    try {
-      const promises = warehouses.map(w => deleteDoc(doc(db, 'warehouse_details', w.id)));
-      await Promise.all(promises);
-      setWarehouses([]);
-    } catch (e) {
-
-      alert('Failed to clear some warehouses.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // ── Derived stats ───────────────────────────────────────────
-  const totalWarehouses = warehouses.length;
-  const activeWarehouses = warehouses.filter(w => w.status === 'active').length;
-  const totalArea = warehouses.reduce((s, w) => s + (w.totalArea || 0), 0);
-  const availableArea = warehouses.reduce((s, w) => s + (w.availableArea || 0), 0);
-
-  const firstName = user?.name ? user.name.split(' ')[0] : 'Partner';
-
-  const stats = [
-    {
-      label: 'Total Warehouses',
-      value: loading ? '—' : totalWarehouses,
-      icon: Building2,
-      color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100',
-    },
-    {
-      label: 'Active Listings',
-      value: loading ? '—' : activeWarehouses,
-      icon: CheckCircle,
-      color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100',
-    },
-    {
-      label: 'Total Area (sq ft)',
-      value: loading ? '—' : totalArea.toLocaleString('en-IN'),
-      icon: Layers,
-      color: 'text-violet-600', bg: 'bg-violet-50', border: 'border-violet-100',
-    },
-    {
-      label: 'Available Area (sq ft)',
-      value: loading ? '—' : availableArea.toLocaleString('en-IN'),
-      icon: Eye,
-      color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100',
-    },
-  ];
+export default function DashboardHome({ setActiveTab }) {
+  const { user } = useAuth();
+  const currentDate = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
   return (
-    <div className="space-y-8 pb-12">
-
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+    <div className="max-w-6xl mx-auto p-10 bg-[#f8f9fa] min-h-screen">
+      
+      {/* Editorial Header */}
+      <div className="flex justify-between items-start mb-12">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Overview</h1>
-          <p className="text-slate-500 mt-2 text-lg">
-            Welcome back, {firstName}. Here&apos;s your live portfolio.
-          </p>
+          <h1 className="text-5xl font-semibold text-slate-900 tracking-tight mb-2">Good evening, {user?.displayName?.split(' ')[0] || 'Reeti'}.</h1>
+          <p className="text-lg text-slate-500">{currentDate} · Your portfolio at a glance</p>
         </div>
-        <div className="flex items-center gap-3 self-start md:self-auto">
-          {warehouses.length > 0 && (
-            <button
-              onClick={handleClearAll}
-              disabled={loading}
-              className="flex items-center gap-2 bg-white border border-red-200 text-red-600 hover:bg-red-50 px-4 py-3 rounded-xl font-medium transition-all shadow-sm disabled:opacity-50"
-              title="Remove all test data"
-            >
-              <Trash2 className="w-4 h-4" /> Clear All
-            </button>
-          )}
-          <button
+        
+        <div className="flex gap-4">
+          <button className="px-8 py-4 text-sm font-bold text-slate-400 bg-transparent border-2 border-slate-200 rounded-2xl hover:border-slate-300 hover:text-slate-600 transition-all">
+            Clear All
+          </button>
+          <button 
             onClick={() => setActiveTab('add-warehouse')}
-            className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-6 py-3 rounded-xl font-medium transition-all shadow-lg shadow-slate-200 hover:-translate-y-1"
+            className="px-8 py-4 text-sm font-bold text-slate-400 bg-transparent border-2 border-slate-200 rounded-2xl hover:border-slate-300 hover:text-slate-600 transition-all flex items-center gap-2"
           >
-            <Plus className="w-5 h-5" /> List New Warehouse
+            <Plus size={18} />
+            List New Warehouse
           </button>
         </div>
       </div>
 
-      {/* ── Stat cards ── */}
-      <motion.div
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
-        variants={containerVariants} initial="hidden" animate="visible"
-      >
-        {stats.map((stat, i) => (
-          <motion.div
-            key={i} variants={boxVariants}
-            className={`bg-white p-6 rounded-2xl border ${stat.border} shadow-sm hover:shadow-md transition-all`}
-          >
-            <div className="flex justify-between items-start mb-4">
-              <div className={`p-3 rounded-xl ${stat.bg} ${stat.color}`}>
-                <stat.icon className="w-6 h-6" />
-              </div>
-              <button className="text-slate-300 hover:text-slate-500">
-                <MoreHorizontal className="w-5 h-5" />
-              </button>
-            </div>
-            {loading ? (
-              <Loader2 className="w-6 h-6 animate-spin text-slate-300 mb-1" />
-            ) : (
-              <h3 className="text-3xl font-bold text-slate-900 mb-1 tracking-tight">{stat.value}</h3>
-            )}
-            <p className="text-sm font-medium text-slate-500">{stat.label}</p>
-          </motion.div>
-        ))}
-      </motion.div>
+      {/* Dark Metric Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+        <MetricCard 
+          title="Total Warehouses" 
+          value="1" 
+          subtitle="Listed on platform"
+          icon={<Lock size={22} />}
+          iconColor="text-[#E65100]"
+        />
+        <MetricCard 
+          title="Active Listings" 
+          value="0" 
+          subtitle="Currently live"
+          icon={<CheckCircle2 size={22} />}
+          iconColor="text-emerald-500"
+        />
+        <MetricCard 
+          title="Total Area" 
+          value="2.5L" 
+          subtitle="sq ft capacity"
+          icon={<Layout size={22} />}
+          iconColor="text-blue-500"
+        />
+        <MetricCard 
+          title="Available Area" 
+          value="2L" 
+          unit="80% available"
+          icon={<Star size={22} />}
+          iconColor="text-[#E65100]"
+        />
+      </div>
 
-      {/* ── Bottom row: Recent warehouses + Storage breakdown ── */}
-      <motion.div
-        className="grid grid-cols-1 lg:grid-cols-3 gap-8"
-        variants={containerVariants} initial="hidden" animate="visible"
-      >
-        {/* Recent warehouse listings */}
-        <motion.div
-          className="lg:col-span-2 bg-white p-8 rounded-2xl border border-slate-200 shadow-sm"
-          variants={boxVariants}
-        >
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-orange-600" />
-              My Warehouses
-            </h3>
-            <button
-              onClick={() => setActiveTab('my-warehouses')}
-              className="text-xs font-bold text-orange-600 hover:text-orange-700 flex items-center gap-1"
-            >
-              View All <ArrowRight className="w-3.5 h-3.5" />
-            </button>
+      {/* My Warehouses List */}
+      <div className="mb-12">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-bold text-slate-900">My Warehouses</h2>
+          <button 
+            onClick={() => setActiveTab('my-warehouses')}
+            className="text-sm font-bold text-[#E65100] hover:text-[#c44400] flex items-center gap-1"
+          >
+            View all →
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          {/* Active Warehouse Card */}
+          <div className="flex items-center justify-between p-6 bg-[#2a2a2c] rounded-3xl text-white shadow-lg cursor-pointer hover:-translate-y-1 transition-transform">
+            <div className="flex items-center gap-6">
+              <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-[#E65100] shadow-sm">
+                <Home size={28} />
+              </div>
+              <div>
+                <h3 className="text-xl font-medium mb-1">Main Storage Unit — Patna</h3>
+                <p className="text-sm text-slate-400">2,50,000 sq ft · Cold Storage · Pending Review</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-xl font-bold mb-2">₹45/sq ft</div>
+              <span className="px-4 py-1 text-xs font-bold text-[#E65100] bg-white rounded-full">
+                Pending
+              </span>
+            </div>
           </div>
 
-          {loading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="w-8 h-8 animate-spin text-orange-300" />
+          {/* Add Another Warehouse Card */}
+          <div 
+            onClick={() => setActiveTab('add-warehouse')}
+            className="flex items-center gap-6 p-6 bg-slate-400/20 border-2 border-dashed border-slate-300 rounded-3xl cursor-pointer hover:bg-slate-400/30 transition-colors"
+          >
+            <div className="w-16 h-16 bg-slate-400/20 rounded-2xl flex items-center justify-center text-slate-500">
+              <Plus size={28} />
             </div>
-          ) : warehouses.length === 0 ? (
-            <div className="text-center py-10 text-slate-400">
-              <Building2 className="w-10 h-10 mx-auto mb-3 opacity-30" />
-              <p className="text-sm font-medium">No warehouses listed yet</p>
-              <button
-                onClick={() => setActiveTab('add-warehouse')}
-                className="mt-4 px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-slate-800 transition-colors"
-              >
-                + Add First Warehouse
-              </button>
+            <div>
+              <h3 className="text-xl font-medium text-slate-600 mb-1">Add another warehouse</h3>
+              <p className="text-sm text-slate-500">Expand your portfolio</p>
             </div>
-          ) : (
-            <div className="space-y-4">
-              {warehouses.slice(0, 4).map(w => (
-                <div key={w.id} className="flex items-center gap-4 p-3 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
-                  {/* Thumbnail */}
-                  <div className="w-14 h-14 rounded-xl bg-slate-100 overflow-hidden shrink-0">
-                    {w.photos?.frontView
-                      ? <OptimizedImage
-                          src={w.photos.frontView}
-                          alt={w.warehouseName}
-                          fill
-                          sizes="56px"
-                          quality={60}
-                          className="w-full h-full"
-                          imgClassName="object-cover"
-                        />
-                      : <div className="w-full h-full flex items-center justify-center text-slate-300"><Building2 className="w-5 h-5" /></div>}
-                  </div>
+          </div>
+        </div>
+      </div>
 
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-slate-900 text-sm line-clamp-1">{w.warehouseName}</p>
-                    {(w.city || w.state) && (
-                      <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
-                        <MapPin className="w-3 h-3" /> {[w.city, w.state].filter(Boolean).join(', ')}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-3 mt-1">
-                      <span className="text-xs text-slate-500">{w.totalArea?.toLocaleString('en-IN')} sq ft</span>
-                      {(w.pricingUnit || w.pricingModel) && (
-                        <span className="text-xs text-slate-400 flex items-center gap-0.5">
-                          <Tag className="w-3 h-3" /> {w.pricingUnit || w.pricingModel}
-                        </span>
-                      )}
-                    </div>
-                  </div>
+      {/* Inquiries Section */}
+      <div>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-bold text-slate-900">Inquiries this week</h2>
+          <span className="px-4 py-1 text-xs font-bold text-white bg-[#2a2a2c] rounded-full">0 new</span>
+        </div>
+        <div className="p-10 bg-[#2a2a2c] rounded-3xl text-center text-slate-400 shadow-lg">
+          No inquiries yet — share your listing to get started
+        </div>
+      </div>
 
-                  {/* Status */}
-                  <span className={`shrink-0 text-xs font-bold px-2.5 py-1 rounded-full border ${w.status === 'active'
-                    ? 'bg-green-50 border-green-200 text-green-700'
-                    : 'bg-slate-50 border-slate-200 text-slate-500'
-                    }`}>
-                    {w.status === 'active' ? '● Live' : '○ Draft'}
-                  </span>
-                </div>
-              ))}
-              {warehouses.length > 4 && (
-                <button
-                  onClick={() => setActiveTab('my-warehouses')}
-                  className="w-full text-center py-2 text-xs font-bold text-slate-400 hover:text-slate-600 transition-colors"
-                >
-                  + {warehouses.length - 4} more warehouses
-                </button>
-              )}
-            </div>
-          )}
-        </motion.div>
-
-        {/* Storage breakdown panel */}
-        <motion.div
-          className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm"
-          variants={boxVariants}
-        >
-          <h3 className="text-lg font-bold text-slate-900 mb-5 flex items-center gap-2">
-            <Activity className="w-5 h-5 text-slate-400" />
-            Storage Breakdown
-          </h3>
-
-          {loading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="w-8 h-8 animate-spin text-orange-300" />
-            </div>
-          ) : warehouses.length === 0 ? (
-            <p className="text-sm text-slate-400 text-center py-10">No data yet</p>
-          ) : (
-            <div className="space-y-5">
-              {/* Utilisation bar */}
-              <div>
-                <div className="flex justify-between text-xs font-semibold text-slate-500 mb-2">
-                  <span>Space Utilisation</span>
-                  <span className="text-slate-800">
-                    {totalArea > 0 ? Math.round(((totalArea - availableArea) / totalArea) * 100) : 0}%
-                  </span>
-                </div>
-                <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-orange-500 to-amber-400 rounded-full transition-all duration-700"
-                    style={{ width: `${totalArea > 0 ? Math.round(((totalArea - availableArea) / totalArea) * 100) : 0}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Category breakdown */}
-              {['Bonded', 'General', 'FTWZ'].map(cat => {
-                const count = warehouses.filter(w => w.warehouseCategory === cat).length;
-                if (count === 0) return null;
-                return (
-                  <div key={cat} className="flex items-center justify-between py-2 border-b border-slate-50">
-                    <span className="text-sm text-slate-600 font-medium">{cat}</span>
-                    <span className="text-sm font-bold text-slate-900">{count} {count === 1 ? 'warehouse' : 'warehouses'}</span>
-                  </div>
-                );
-              })}
-
-              {/* Pricing units */}
-              <div className="pt-1">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Pricing Units Used</p>
-                <div className="flex flex-wrap gap-2">
-                  {[...new Set(warehouses.map(w => w.pricingUnit || w.pricingModel).filter(Boolean))].map(m => (
-                    <span key={m} className="px-2.5 py-1 bg-orange-50 text-orange-700 border border-orange-100 rounded-full text-xs font-semibold">
-                      {m}
-                    </span>
-                  ))}
-                  {warehouses.every(w => !w.pricingUnit && !w.pricingModel) && (
-                    <span className="text-xs text-slate-400">No pricing set</span>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-        </motion.div>
-      </motion.div>
     </div>
   );
 }
