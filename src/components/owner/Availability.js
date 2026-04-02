@@ -174,15 +174,15 @@ export default function Availability() {
   return (
     <div className="flex-1 bg-[#f4f5f7] min-h-screen relative overflow-hidden z-0 pb-20">
       
-      {/* --- AMBIENT GLOWS & GRID PATTERN --- */}
+      {/* --- STATIC AMBIENT GLOWS & GRID PATTERN --- */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-[-1]">
         <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, black 1px, transparent 0)', backgroundSize: '24px 24px' }} />
-        <motion.div animate={{ x: [0, -30, 20, 0], y: [0, 40, -20, 0], scale: [1, 1.1, 0.9, 1] }} transition={{ duration: 20, repeat: Infinity, ease: "linear" }} className="absolute top-[-5%] right-[10%] w-[500px] h-[500px] bg-orange-500/10 rounded-full blur-[120px]" />
-        <motion.div animate={{ x: [0, 40, -30, 0], y: [0, -40, 20, 0], scale: [1, 1.05, 0.95, 1] }} transition={{ duration: 15, repeat: Infinity, ease: "linear" }} className="absolute bottom-[10%] left-[-5%] w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-[120px]" />
+        <div className="absolute top-[-5%] right-[10%] w-[500px] h-[500px] bg-orange-500/10 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[10%] left-[-5%] w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-[120px]" />
       </div>
 
       {/* Header */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center px-10 py-8 bg-white/60 backdrop-blur-2xl border-b border-white sticky top-0 z-30 shadow-[0_4px_30px_rgba(0,0,0,0.02)]">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center px-10 py-8 bg-white/90 backdrop-blur-sm border-b border-white sticky top-0 z-30 shadow-[0_4px_30px_rgba(0,0,0,0.02)]">
         <div>
           <h1 className="text-3xl font-bold text-slate-800 tracking-tight flex items-center gap-3">
             Availability Calendar <Sparkles className="w-6 h-6 text-orange-500" />
@@ -236,7 +236,7 @@ export default function Availability() {
             </div>
 
             {/* ──── Floating Tile Grid ──── */}
-            <div className="bg-white/30 backdrop-blur-3xl rounded-[3rem] p-6 sm:p-8 shadow-2xl border border-white/80">
+            <div className="bg-white/60 backdrop-blur-sm rounded-[3rem] p-6 sm:p-8 shadow-2xl border border-white/80">
               
               {/* Days Header */}
               <div className="grid grid-cols-7 gap-3 mb-4">
@@ -270,10 +270,9 @@ export default function Availability() {
                     <motion.div
                       key={day} variants={cellVariants}
                       onClick={() => openModal(day)}
-                      whileHover={{ scale: 1.05, y: -4, zIndex: 10 }}
                       className={`
-                        relative rounded-3xl p-3 sm:p-4 transition-all cursor-pointer flex flex-col justify-between overflow-hidden
-                        ${today ? 'bg-white shadow-[0_0_30px_rgba(249,115,22,0.15)] border-2 border-orange-300' : 'bg-white/70 backdrop-blur-xl border border-white shadow-sm hover:shadow-[0_10px_30px_rgba(0,0,0,0.08)] hover:border-orange-200'}
+                        relative rounded-3xl p-3 sm:p-4 cursor-pointer flex flex-col justify-between overflow-hidden transition-shadow
+                        ${today ? 'bg-white shadow-[0_0_30px_rgba(249,115,22,0.15)] border-2 border-orange-300' : 'bg-white/90 border border-white shadow-sm hover:shadow-[0_10px_30px_rgba(0,0,0,0.08)] hover:border-orange-200'}
                       `}
                     >
                       {/* Day Number */}
@@ -429,9 +428,8 @@ export default function Availability() {
 // ──────────────────────────────────────────────────────────────
 function StatBadge({ color, glow, label, value }) {
   return (
-    <div className="bg-white/60 backdrop-blur-xl px-5 py-3 rounded-2xl border border-white shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex items-center gap-4 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:bg-white/80 transition-all cursor-default">
+    <div className="bg-white/80 px-5 py-3 rounded-2xl border border-white shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex items-center gap-4 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:bg-white/90 transition-shadow cursor-default">
       <div className="relative flex h-3.5 w-3.5">
-        <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-60 ${color}`}></span>
         <span className={`relative inline-flex rounded-full h-3.5 w-3.5 ${color} ${glow}`}></span>
       </div>
       <div>

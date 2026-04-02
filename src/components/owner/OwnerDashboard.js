@@ -104,7 +104,7 @@ export default function OwnerDashboard({ user, onLogout }) {
       {/* Sidebar overlay for mobile/tablet */}
       <AnimatePresence>
         {sidebarOpen && (
-          <motion.div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm md:hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSidebarOpen(false)}>
+          <motion.div className="fixed inset-0 z-50 bg-slate-900/40 md:hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSidebarOpen(false)}>
             <motion.div className="absolute left-0 top-0 h-full w-64 bg-[#111111] shadow-2xl border-r border-slate-800 flex flex-col" initial={{ x: -260 }} animate={{ x: 0 }} exit={{ x: -260 }} transition={{ type: 'tween', duration: 0.25 }} onClick={e => e.stopPropagation()}>
               <OwnerSidebar activeTab={activeTab} setActiveTab={tab => { setActiveTab(tab); setSidebarOpen(false); }} onLogout={onLogout} />
             </motion.div>
@@ -117,7 +117,7 @@ export default function OwnerDashboard({ user, onLogout }) {
         
         {/* Generic Header for non-dashboard tabs */}
         {activeTab !== 'dashboard' && activeTab !== 'my-warehouses' && activeTab !== 'availability' && (
-          <header className="bg-white/60 backdrop-blur-xl h-auto min-h-16 border-b border-white sticky top-0 z-30 px-6 sm:px-10 flex flex-col xs:flex-row xs:items-center justify-between gap-4 py-4 shadow-[0_4px_30px_rgba(0,0,0,0.02)]">
+          <header className="bg-white/90 backdrop-blur-sm h-auto min-h-16 border-b border-white sticky top-0 z-30 px-6 sm:px-10 flex flex-col xs:flex-row xs:items-center justify-between gap-4 py-4 shadow-[0_4px_30px_rgba(0,0,0,0.02)]">
             <div className="flex items-center gap-3">
               <button className="md:hidden p-2 rounded-xl text-slate-600 hover:bg-white shadow-sm transition-all" onClick={() => setSidebarOpen(true)}>
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
@@ -161,7 +161,7 @@ export default function OwnerDashboard({ user, onLogout }) {
                 <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-orange-500/10 rounded-full blur-[100px] pointer-events-none z-[-1]" />
                 
                 {/* ── PROFILE CARD ── */}
-                <div className="bg-white/60 backdrop-blur-2xl rounded-[2.5rem] border border-white shadow-[0_8px_30px_rgba(0,0,0,0.04)] overflow-hidden relative">
+                <div className="bg-white/80 rounded-[2.5rem] border border-white shadow-[0_8px_30px_rgba(0,0,0,0.04)] overflow-hidden relative">
                   
                   {/* Executive Cover Banner */}
                   <div className="h-32 bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600 relative">
@@ -180,7 +180,7 @@ export default function OwnerDashboard({ user, onLogout }) {
                   <div className="px-8 pb-8">
                     {/* Glowing Avatar */}
                     <div className="relative w-28 h-28 -mt-14 mb-6 group inline-block">
-                      <div className="absolute -inset-2 bg-gradient-to-r from-orange-400 to-rose-400 rounded-full blur-lg opacity-40 group-hover:opacity-60 transition duration-500 animate-pulse" />
+                      <div className="absolute -inset-2 bg-gradient-to-r from-orange-400 to-rose-400 rounded-full blur-lg opacity-40 group-hover:opacity-60 transition duration-500" />
                       <div className="relative w-full h-full rounded-full border-4 border-white overflow-hidden bg-slate-100 shadow-xl flex items-center justify-center">
                         {localUser?.photoURL ? (
                           <img src={localUser.photoURL} alt="Profile" className="w-full h-full object-cover" />
@@ -248,7 +248,7 @@ export default function OwnerDashboard({ user, onLogout }) {
                 </div>
 
                 {/* ── SECURITY & SESSION (Danger Zone) ── */}
-                <div className="bg-white/60 backdrop-blur-2xl p-8 rounded-[2.5rem] border border-rose-100 shadow-[0_8px_30px_rgba(244,63,94,0.05)] relative overflow-hidden">
+                <div className="bg-white/80 p-8 rounded-[2.5rem] border border-rose-100 shadow-[0_8px_30px_rgba(244,63,94,0.05)] relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-64 h-64 bg-rose-500/10 rounded-full blur-[80px] pointer-events-none" />
                   
                   <div className="flex items-center gap-4 mb-6 relative z-10">
@@ -286,7 +286,7 @@ export default function OwnerDashboard({ user, onLogout }) {
 // ─────────────────────────────────────────────────────────────
 function InfoField({ icon, label, value }) {
   return (
-    <div className="flex items-center gap-4 p-5 bg-white/50 backdrop-blur-md rounded-2xl border border-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.02)] hover:bg-white/80 transition-all group cursor-default">
+    <div className="flex items-center gap-4 p-5 bg-white/70 rounded-2xl border border-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.02)] hover:bg-white/90 transition-colors group cursor-default">
       <div className="p-3 bg-white rounded-xl shadow-sm border border-slate-50 text-orange-400 group-hover:text-orange-500 group-hover:scale-110 transition-all">
         {icon}
       </div>
