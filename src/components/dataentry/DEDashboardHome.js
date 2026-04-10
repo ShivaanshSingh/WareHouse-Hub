@@ -227,11 +227,11 @@ export default function DEDashboardHome({ setActiveTab }) {
                   >
                     <div className="flex items-center gap-5">
                       <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-50 to-cyan-100 border border-white text-cyan-600 flex items-center justify-center font-bold text-lg group-hover:scale-110 group-hover:shadow-md transition-all duration-300">
-                        {(wh.companyName || wh.warehouseName || 'W').charAt(0).toUpperCase()}
+                        {(wh.warehouseName || 'W').charAt(0).toUpperCase()}
                       </div>
                       <div>
                         <h4 className="text-base font-bold text-slate-800 group-hover:text-cyan-600 transition-colors">
-                          {wh.companyName || wh.warehouseName || 'Unnamed Facility'}
+                          {wh.warehouseName || 'Unnamed Facility'}
                         </h4>
                         <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500 mt-1">
                           <MapPin size={14} className="text-slate-400"/> {wh.city || 'Location pending'}, {wh.state || ''}

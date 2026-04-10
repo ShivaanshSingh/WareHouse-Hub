@@ -356,11 +356,43 @@ export default function DEAddWarehouse({ setActiveTab }) {
                         <YesNoField label="Outbound Handling" id="outboundHandling" value={operationsDetails.outboundHandling} onChange={v => handleOperationsChange('outboundHandling', v)} errors={errors} />
                         <YesNoField label="WMS Available" id="wmsAvailable" value={operationsDetails.wmsAvailable} onChange={v => handleOperationsChange('wmsAvailable', v)} errors={errors} />
                         <SelectField label="Days of Operation" id="daysOfOperation" options={DAYS_OF_OPERATION} placeholder="Select days" value={operationsDetails.daysOfOperation} onChange={v => handleOperationsChange('daysOfOperation', v)} mandatory errors={errors} />
-                        <SelectField label="Operation Time" id="operationTime" options={OPERATION_TIMES} placeholder="Select time" value={operationsDetails.operationTime} onChange={v => handleOperationsChange('operationTime', v)} mandatory errors={errors} />
+
+                        <div className="flex flex-col gap-4">
+                          <SelectField label="Operation Time" id="operationTime" options={OPERATION_TIMES} placeholder="Select time" value={operationsDetails.operationTime} onChange={v => {
+                            handleOperationsChange('operationTime', v);
+                            if (v !== 'Other' && v !== 'Fixed Hours') handleOperationsChange('customOperationTime', '');
+                          }} mandatory errors={errors} />
+
+                          {operationsDetails.operationTime === 'Fixed Hours' && (
+                            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
+                              <Field label="Specify Fixed Hours / Shifts" id="customOperationTime" placeholder="e.g. 9 AM to 6 PM or Shift 1: 6AM-2PM..." value={operationsDetails.customOperationTime || ''} onChange={v => handleOperationsChange('customOperationTime', v)} mandatory errors={errors} />
+                            </motion.div>
+                          )}
+                          {operationsDetails.operationTime === 'Other' && (
+                            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
+                              <Field label="Specify Other Time" id="customOperationTime" placeholder="e.g. 9 AM to 6 PM" value={operationsDetails.customOperationTime || ''} onChange={v => handleOperationsChange('customOperationTime', v)} mandatory errors={errors} />
+                            </motion.div>
+                          )}
+                        </div>
                       </div>
+
                       <div className="mt-8 space-y-8">
-                        <MultiChips label="Security Features" id="securityFeatures" options={SECURITY_FEATURES} mandatory selected={operationsDetails.securityFeatures} onToggle={item => toggleItem('securityFeatures', item, setOperationsDetails)} errors={errors} />
-                        <MultiChips label="Suitable Goods" id="suitableGoods" options={SUITABLE_GOODS} mandatory selected={operationsDetails.suitableGoods} onToggle={item => toggleItem('suitableGoods', item, setOperationsDetails)} errors={errors} />
+                        <div>
+                          <MultiChips label="Security Features" id="securityFeatures" options={SECURITY_FEATURES} mandatory selected={operationsDetails.securityFeatures} onToggle={item => toggleItem('securityFeatures', item, setOperationsDetails)} errors={errors} />
+                          {operationsDetails.securityFeatures.includes('Others') && (
+                            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-4 max-w-md">
+                              <Field label="Specify Other Security Feature" id="customSecurityFeature" placeholder="e.g. Biometric Access" value={operationsDetails.customSecurityFeature || ''} onChange={v => handleOperationsChange('customSecurityFeature', v)} mandatory errors={errors} />
+                            </motion.div>
+                          )}
+                        </div>
+                        <div>
+                          <MultiChips label="Suitable Goods" id="suitableGoods" options={SUITABLE_GOODS} mandatory selected={operationsDetails.suitableGoods} onToggle={item => toggleItem('suitableGoods', item, setOperationsDetails)} errors={errors} />
+                          {operationsDetails.suitableGoods.includes('Others') && (
+                            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-4 max-w-md">
+                              <Field label="Specify Other Goods" id="customSuitableGood" placeholder="e.g. Textiles, Electronics" value={operationsDetails.customSuitableGood || ''} onChange={v => handleOperationsChange('customSuitableGood', v)} mandatory errors={errors} />
+                            </motion.div>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <div>
@@ -376,6 +408,11 @@ export default function DEAddWarehouse({ setActiveTab }) {
                           );
                         })}
                       </div>
+                      {operationsDetails.valueAddedServices.includes('Others') && (
+                        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-4 max-w-md">
+                          <Field label="Specify Other Service" id="customValueAddedService" placeholder="e.g. Returns Processing" value={operationsDetails.customValueAddedService || ''} onChange={v => handleOperationsChange('customValueAddedService', v)} mandatory errors={errors} />
+                        </motion.div>
+                      )}
                     </div>
                   </div>
                 )}

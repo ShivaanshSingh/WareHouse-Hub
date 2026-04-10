@@ -16,7 +16,7 @@ import {
   signInWithPopup,
   fetchSignInMethodsForEmail
 } from 'firebase/auth';
-import { doc, setDoc, getDoc, updateDoc, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc, serverTimestamp, collection, collectionGroup, query, where, getDocs } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { auth, db, storage } from './firebase';
 import { saveContactDetails } from './contactDetails';
@@ -24,27 +24,24 @@ import { saveContactDetails } from './contactDetails';
 const USER_ROLES = ['owner', 'merchant', 'admin', 'dataentry'];
 
 export const getUserDocParams = async (uid) => {
-  // Check the new structure first
+  // Check the flat structure first: users/{uid}
+  const flatRef = doc(db, 'users', uid);
+  const flatDoc = await getDoc(flatRef);
+  if (flatDoc.exists()) {
+    return { ref: flatRef, data: flatDoc.data() };
+  }
+
+  // Fallback: check the old nested structure users/{role}/accounts/{uid}
   const docs = await Promise.all(USER_ROLES.map(role => 
     getDoc(doc(db, 'users', role, 'accounts', uid))
   ));
   const found = docs.find(d => d.exists());
   
   if (found) {
-    return { ref: found.ref, data: found.data() };
-  }
-
-  // Fallback to the old structure
-  const oldDocRef = doc(db, 'users', uid);
-  const oldDoc = await getDoc(oldDocRef);
-  if (oldDoc.exists()) {
-    const data = oldDoc.data();
-    const role = data.userType || 'merchant'; // safe fallback
-    
-    // Auto-migrate the user to the new structure
-    const newRef = doc(db, 'users', role, 'accounts', uid);
-    await setDoc(newRef, data);
-    return { ref: newRef, data };
+    const data = found.data();
+    // Auto-migrate to the flat structure
+    await setDoc(flatRef, data);
+    return { ref: flatRef, data };
   }
 
   return null;
@@ -165,8 +162,7 @@ export const registerUser = async (email, password, name, userType, company = ''
     const emailExists = await checkEmailExists(email);
     if (emailExists) {
       // Check if user document exists in Firestore to get userType
-      // We use collectionGroup 'accounts' since profiles are now subcollections
-      const q = query(collectionGroup(db, 'accounts'), where('email', '==', email));
+      const q = query(collection(db, 'users'), where('email', '==', email));
       const querySnapshot = await getDocs(q);
 
       if (!querySnapshot.empty) {
@@ -203,8 +199,8 @@ export const registerUser = async (email, password, name, userType, company = ''
       displayName: name
     });
 
-    // Store additional user data in Firestore
-    await setDoc(doc(db, 'users', userType, 'accounts', user.uid), {
+    // Store additional user data in Firestore (flat: users/{uid})
+    await setDoc(doc(db, 'users', user.uid), {
       uid: user.uid,
       email: user.email,
       name: name,
@@ -359,8 +355,8 @@ export const loginWithGoogle = async (userType, isSignIn = false) => {
         throw err;
       }
 
-      // Sign-UP flow: create user document with selected userType
-      await setDoc(doc(db, 'users', userType, 'accounts', user.uid), {
+      // Sign-UP flow: create user document with selected userType (flat: users/{uid})
+      await setDoc(doc(db, 'users', user.uid), {
         uid: user.uid,
         email: user.email,
         name: user.displayName,

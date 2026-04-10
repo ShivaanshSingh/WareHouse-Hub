@@ -42,7 +42,6 @@ export async function migrateExistingUsersToContactDetails() {
 
     try {
       const contactRef = doc(db, 'contact_details', userType, 'users', uid);
-      const newAuthRef = doc(db, 'users', userType, 'accounts', uid);
 
       // Save to contact_details
       await setDoc(contactRef, {
@@ -54,12 +53,6 @@ export async function migrateExistingUsersToContactDetails() {
         company: data.company || '',
         migratedAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-      }, { merge: true });
-
-      // Save full profile to new nested auth structure
-      await setDoc(newAuthRef, {
-        ...data,
-        migratedAt: serverTimestamp(),
       }, { merge: true });
 
       migrated++;
