@@ -143,21 +143,23 @@ export default function OwnerDashboard({ user, onLogout }) {
         {/* (Background lines removed from here - now only active in Settings tab) */}
         
         
-        {/* Mobile Header (Global for phone/tablet) */}
-        <header className="lg:hidden bg-white/90 backdrop-blur-sm border-b border-white px-4 py-3 flex items-center justify-between sticky top-0 z-40">
-          <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-lg text-slate-600 hover:bg-slate-100">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-orange-600 rounded-md flex items-center justify-center text-white font-bold text-xs shadow-sm">OW</div>
-            <span className="font-bold text-slate-800 text-sm">Owner Portal</span>
-          </div>
-          <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-600 border border-white flex items-center justify-center font-bold text-sm shadow-sm">
-            {(localUser?.name || 'O')[0].toUpperCase()}
-          </div>
-        </header>
+        {/* Mobile Header (Global for phone/tablet, only on tabs without their own sticky header) */}
+        {activeTab !== 'dashboard' && activeTab !== 'my-warehouses' && activeTab !== 'availability' && (
+          <header className="lg:hidden bg-white/90 backdrop-blur-sm border-b border-white px-4 py-3 flex items-center justify-between sticky top-0 z-40">
+            <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-lg text-slate-600 hover:bg-slate-100">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 bg-orange-600 rounded-md flex items-center justify-center text-white font-bold text-xs shadow-sm">OW</div>
+              <span className="font-bold text-slate-800 text-sm">Owner Portal</span>
+            </div>
+            <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-600 border border-white flex items-center justify-center font-bold text-sm shadow-sm">
+              {(localUser?.name || 'O')[0].toUpperCase()}
+            </div>
+          </header>
+        )}
 
         {/* Generic Header for non-dashboard tabs (Desktop only) */}
         {activeTab !== 'dashboard' && activeTab !== 'my-warehouses' && activeTab !== 'availability' && (
