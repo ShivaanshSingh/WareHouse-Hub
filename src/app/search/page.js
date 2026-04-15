@@ -8,13 +8,28 @@ import Navbar from '@/components/commonfiles/Navbar';
 import Footer from '@/components/commonfiles/Footer';
 import WarehouseCard from '@/components/commonfiles/WarehouseCard';
 import { Loader2, Search } from 'lucide-react';
+import { useCityAutocomplete } from '@/hooks/useCityAutocomplete';
+import CityDropdown from '@/components/commonfiles/CityDropdown';
 
 function SearchResults() {
   const searchParams = useSearchParams();
   const router = useRouter();
   
   const initialQuery = searchParams.get('q') || '';
-  const [searchQuery, setSearchQuery] = useState(initialQuery);
+  
+  const {
+    searchQuery,
+    setSearchQuery,
+    suggestions,
+    showSuggestions,
+    activeSuggestionIndex,
+    handleSearchChange,
+    handleSuggestionClick,
+    handleKeyDown,
+    setShowSuggestions,
+    setActiveSuggestionIndex
+  } = useCityAutocomplete(initialQuery);
+
   const [allWarehouses, setAllWarehouses] = useState([]);
   const [filteredWarehouses, setFilteredWarehouses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -65,13 +80,21 @@ function SearchResults() {
     setFilteredWarehouses(results);
   }, [searchParams, allWarehouses]);
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+  const handleSearch = (eOrText) => {
+    if (eOrText && eOrText.preventDefault) {
+      eOrText.preventDefault();
+    }
+    const queryText = typeof eOrText === 'string' ? eOrText : searchQuery;
+    if (queryText.trim()) {
+      const searchCity = queryText.split(',')[0].trim();
+      router.push(`/search?q=${encodeURIComponent(searchCity)}`);
     } else {
       router.push(`/search`);
     }
+  };
+
+  const handleKeyDownWrapper = (e) => {
+    handleKeyDown(e, handleSearch);
   };
 
   return (
@@ -93,10 +116,29 @@ function SearchResults() {
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              onKeyDown={handleKeyDownWrapper}
+              onFocus={() => searchQuery.length > 0 && setShowSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
               placeholder="Search by city, type, amenities, or name..."
               className="w-full pl-12 pr-32 py-4 bg-white border-2 border-slate-200 rounded-2xl outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-50 transition-all font-medium text-slate-800 shadow-sm"
             />
+            {/* Added relative positioned wrapper for CityDropdown */}
+            <div className="absolute top-[100%] left-0 right-0 z-50">
+              <CityDropdown 
+                suggestions={suggestions}
+                showSuggestions={showSuggestions}
+                activeSuggestionIndex={activeSuggestionIndex}
+                onSuggestionClick={(suggestion) => {
+                  handleSuggestionClick(suggestion);
+                }}
+                onSuggestionHover={setActiveSuggestionIndex}
+                customStyles={{ 
+                  borderRadius: '16px',
+                  boxShadow: '0 10px 25px rgba(0,0,0,0.1)'
+                }}
+              />
+            </div>
             <button
               type="submit"
               className="absolute inset-y-2 right-2 px-6 bg-orange-500 hover:bg-orange-600 focus:bg-orange-600 text-white font-bold rounded-xl transition-colors shadow-sm"

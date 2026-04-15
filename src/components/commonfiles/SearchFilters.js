@@ -1,11 +1,39 @@
 'use client'
 import { Search, MapPin, Grid, Ruler, Wallet, Filter } from 'lucide-react';
+import { useCityAutocomplete } from '@/hooks/useCityAutocomplete';
+import CityDropdown from './CityDropdown';
+import { useEffect } from 'react';
 
 export default function SearchFilters({ filters, setFilters }) {
   
   const handleChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
+
+  const {
+    searchQuery,
+    setSearchQuery,
+    suggestions,
+    showSuggestions,
+    activeSuggestionIndex,
+    handleSearchChange,
+    handleSuggestionClick,
+    handleKeyDown,
+    setShowSuggestions,
+    setActiveSuggestionIndex
+  } = useCityAutocomplete(filters.city || '');
+
+  // Sync internal search query to parent filter
+  useEffect(() => {
+    handleChange('city', searchQuery.split(',')[0].trim());
+  }, [searchQuery]);
+
+  // Sync parent filter clearing back to internal state
+  useEffect(() => {
+    if (!filters.city) {
+      setSearchQuery('');
+    }
+  }, [filters.city]);
 
   return (
     <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 mb-8">
@@ -22,14 +50,30 @@ export default function SearchFilters({ filters, setFilters }) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         
         {/* City Input */}
-        <div className="relative group">
+        <div className="relative group z-50">
           <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
           <input
             type="text"
             placeholder="City (e.g., Delhi)"
-            value={filters.city}
-            onChange={(e) => handleChange('city', e.target.value)}
+            value={searchQuery}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            onKeyDown={(e) => handleKeyDown(e)}
+            onFocus={() => searchQuery.length > 0 && setShowSuggestions(true)}
+            onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
             className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition-all placeholder:text-slate-400 font-medium text-slate-700"
+          />
+          <CityDropdown 
+            suggestions={suggestions}
+            showSuggestions={showSuggestions}
+            activeSuggestionIndex={activeSuggestionIndex}
+            onSuggestionClick={handleSuggestionClick}
+            onSuggestionHover={setActiveSuggestionIndex}
+            customStyles={{ 
+              top: '100%',
+              borderRadius: '12px',
+              border: '1px solid #e2e8f0',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+            }}
           />
         </div>
 

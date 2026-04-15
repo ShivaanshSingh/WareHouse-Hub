@@ -46,7 +46,7 @@ export default function DashboardNavbar({ user, onLogout }) {
                 <div className="hidden md:flex items-center gap-2">
                   <div className="text-left">
                     <p className="text-sm font-medium text-slate-700 leading-none">{user.name}</p>
-                    <p className="text-[10px] text-slate-500 mt-1">{user.company || 'Merchant'}</p>
+                    <p className="text-[10px] text-slate-500 mt-1">{user.company || 'Business Client'}</p>
                   </div>
                   <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
                 </div>

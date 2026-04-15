@@ -41,7 +41,9 @@ export default function Footer() {
             {/* Link columns */}
             {Object.entries(links).map(([title, items], idx) => (
               <div key={idx} className="space-y-6">
-                <h4 className="text-[10px] font-bold text-blue-400 uppercase tracking-[0.4em]">FOR {title}</h4>
+                <h4 className="text-[10px] font-bold text-blue-400 uppercase tracking-[0.4em]">
+                  FOR {title === 'merchants' ? 'SPACE SEEKERS' : title === 'owners' ? 'SPACE PROVIDERS' : title}
+                </h4>
                 <ul className="space-y-3">
                   {items.map((item, i) => (
                     <li key={i}>
