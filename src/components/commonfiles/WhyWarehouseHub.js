@@ -6,7 +6,7 @@ const features = [
   {
     title: "Verified Hubs",
     label: "NETWORK",
-    desc: "Access a curated network of verified warehouse owners across India's industrial centers.",
+    desc: "Access a curated network of verified Warehouse Partners across India's industrial centers.",
     stat: "500+",
     statLabel: "Facilities",
     icon: Building2,
@@ -98,7 +98,7 @@ export default function WhyChooseUs() {
         <div className="flex items-center gap-3 mb-8">
           <div className="w-[1px] h-6 bg-[#E65100]"></div>
           <span className="text-xs font-bold tracking-[0.15em] uppercase text-[#E65100]">
-            Why Link2Logistics
+            Why L2L
           </span>
         </div>
 

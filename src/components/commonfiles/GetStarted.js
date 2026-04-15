@@ -6,7 +6,7 @@ const phases = [
   {
     title: "Initialize Profile",
     label: "PHASE 01",
-    desc: "Establish your verified business identity. Merchants and Owners undergo a rapid 2-minute authentication process.",
+    desc: "Establish your verified business identity. Business Clients (Seekers) and Warehouse Partners (Providers) undergo a rapid 2-minute authentication process.",
     logo: (
       <svg viewBox="0 0 100 100" className="w-full h-full" fill="none" stroke="currentColor" strokeWidth="0.8">
         <rect x="25" y="25" width="50" height="50" rx="1" />

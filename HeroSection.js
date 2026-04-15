@@ -1,17 +1,82 @@
 "use client";
 import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
+import { fetchCities } from '@/lib/locationService';
+import { db } from '@/lib/firebase';
+import { collectionGroup, query, where, getDocs } from 'firebase/firestore';
+import { useCityAutocomplete } from '@/hooks/useCityAutocomplete';
+import CityDropdown from '@/components/commonfiles/CityDropdown';
 
 export default function HeroSection() {
   const videoRef = useRef(null);
   const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState('');
+  const {
+    searchQuery,
+    setSearchQuery,
+    suggestions,
+    showSuggestions,
+    activeSuggestionIndex,
+    handleSearchChange,
+    handleSuggestionClick,
+    handleKeyDown,
+    setShowSuggestions,
+    setActiveSuggestionIndex
+  } = useCityAutocomplete('');
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const checkAvailability = async (text) => {
+    if (!text.trim()) return false;
+    
+    setLoading(true);
+    try {
+      const cityName = text.split(',')[0].trim().toLowerCase();
+      const cg = collectionGroup(db, 'warehouses');
+      // Fetch all to avoid mandatory index for collectionGroup where clause
+      const snap = await getDocs(cg);
+      
+      const exists = snap.docs.some(d => {
+        const data = d.data();
+        if (data.status !== 'approved') return false; // Client-side status check
+        const city = (data.city || data.location?.city || '').toLowerCase();
+        return city === cityName || cityName.includes(city) || city.includes(cityName);
+      });
+
+      if (!exists) {
+        setErrorMessage(`No warehouse present in ${text.split(',')[0]}`);
+        return false;
+      }
+      return true;
+    } catch (err) {
+      console.error('Availability check failed:', err);
+      return true; // Allow search to proceed if DB check fails
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleSearch = async (eOrText) => {
+    // If it's an event, prevent default
+    if (eOrText && eOrText.preventDefault) {
+      eOrText.preventDefault();
+    }
+    
+    // Determine the query text
+    const queryText = typeof eOrText === 'string' ? eOrText : searchQuery;
+
+    if (queryText.trim()) {
+      const isAvailable = await checkAvailability(queryText);
+      if (isAvailable) {
+        const searchCity = queryText.split(',')[0].trim();
+        router.push(`/search?q=${encodeURIComponent(searchCity)}`);
+      }
+    }
+  };
+
+  const handleKeyDownWrapper = (e) => {
+    handleKeyDown(e, handleSearch);
   };
 
   useEffect(() => {
@@ -134,7 +199,7 @@ export default function HeroSection() {
         </p>
 
         {/* Search Bar — Single responsive form */}
-        <div style={{ width: '100%', maxWidth: '560px', marginBottom: '28px' }}>
+        <div style={{ width: '100%', maxWidth: '560px', marginBottom: '28px', position: 'relative' }}>
           <form onSubmit={handleSearch} style={{
             display: 'flex',
             alignItems: 'center',
@@ -152,7 +217,13 @@ export default function HeroSection() {
               type="text"
               placeholder="ZIP, City, or State..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                handleSearchChange(e.target.value);
+                setErrorMessage('');
+              }}
+              onKeyDown={handleKeyDownWrapper}
+              onFocus={() => searchQuery.length > 0 && setShowSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
               style={{
                 flex: 1,
                 background: 'transparent',
@@ -169,6 +240,7 @@ export default function HeroSection() {
             <button
               className="search-btn"
               type="submit"
+              disabled={loading}
               style={{
                 background: '#f97316',
                 color: '#ffffff',
@@ -178,15 +250,62 @@ export default function HeroSection() {
                 padding: '10px 24px',
                 borderRadius: '100px',
                 border: 'none',
-                cursor: 'pointer',
+                cursor: loading ? 'not-allowed' : 'pointer',
                 whiteSpace: 'nowrap',
                 transition: 'background 0.2s',
                 flexShrink: 0,
+                opacity: loading ? 0.7 : 1,
               }}
             >
-              Search Space
+              {loading ? 'Checking...' : 'Search Space'}
             </button>
           </form>
+
+          {/* Autocomplete Dropdown */}
+          <CityDropdown 
+            suggestions={suggestions}
+            showSuggestions={showSuggestions}
+            activeSuggestionIndex={activeSuggestionIndex}
+            onSuggestionClick={(suggestion) => {
+              handleSuggestionClick(suggestion);
+              setErrorMessage('');
+            }}
+            onSuggestionHover={setActiveSuggestionIndex}
+          />
+
+          {/* Error Message */}
+          <AnimatePresence>
+            {errorMessage && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                style={{
+                  position: 'absolute',
+                  top: '110%',
+                  left: 0,
+                  right: 0,
+                  background: 'rgba(239, 68, 68, 0.95)',
+                  backdropFilter: 'blur(8px)',
+                  color: 'white',
+                  padding: '10px 20px',
+                  borderRadius: '12px',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  boxShadow: '0 8px 20px rgba(239, 68, 68, 0.2)',
+                  zIndex: 50,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                {errorMessage}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Secondary row */}
@@ -214,7 +333,7 @@ export default function HeroSection() {
               transition: 'background 0.2s, border-color 0.2s',
             }}
           >
-            Become a Supplier
+            Become a Warehouse Partner
           </button>
 
           <div style={{ width: '1px', height: '16px', background: 'rgba(255,255,255,0.12)' }} />

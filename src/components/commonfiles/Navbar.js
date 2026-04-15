@@ -50,8 +50,8 @@ export default function Navbar() {
   }, []);
 
   const navLinks = [
-    { label: 'Why Link2Logistics', href: '#why-link2logistics' },
-    { label: 'How Link2Logistics Works', href: '#how-link2logistics-works' },
+    { label: 'Why L2L', href: '#why-link2logistics' },
+    { label: 'How L2L Works', href: '#how-link2logistics-works' },
   ]
 
   // Smooth scroll handler for anchor links
@@ -130,7 +130,7 @@ export default function Navbar() {
         <p className="text-sm font-bold text-slate-900 truncate">{user.name || 'User'}</p>
         <p className="text-xs text-slate-500 truncate mt-0.5">{user.email}</p>
         <span className="inline-block mt-1.5 px-2 py-0.5 bg-orange-50 text-orange-600 text-[10px] font-bold rounded-full uppercase tracking-wider border border-orange-100">
-          {user.userType || 'Merchant'}
+          {user.userType === 'owner' ? 'Warehouse Partners' : user.userType === 'dataentry' ? 'Data Entry' : 'Business Clients'}
         </span>
       </div>
 

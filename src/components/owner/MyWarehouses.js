@@ -9,9 +9,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   MapPin, Building2, Layers, Package, DoorOpen,
   Calendar, Loader2, Plus, Warehouse, ShieldCheck, 
-  Tag, Clock, ChevronDown, Wifi, WifiOff, CheckCircle2, XCircle, Trash2, Maximize, ArrowRight, ArrowUpRight
+  Tag, Clock, ChevronDown, Wifi, WifiOff, CheckCircle2, XCircle, Trash2, Maximize, ArrowRight, ArrowUpRight, Edit2
 } from 'lucide-react';
 import OptimizedImage from '../commonfiles/OptimizedImage';
+import Link from 'next/link';
+import { encodeWarehouseId } from '@/lib/warehouseId';
 
 // --- PREMIUM SKELETON LOADER ---
 const SkeletonPulse = ({ className }) => (
@@ -22,7 +24,7 @@ const SkeletonPulse = ({ className }) => (
   />
 );
 
-export default function MyWarehouses({ setActiveTab, onOpenSidebar }) {
+export default function MyWarehouses({ setActiveTab, onOpenSidebar, onEdit }) {
   const { user } = useAuth();
   const [warehouses, setWarehouses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -136,7 +138,7 @@ export default function MyWarehouses({ setActiveTab, onOpenSidebar }) {
           <motion.div variants={containerVariants} initial="hidden" animate="show" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
             <AnimatePresence>
               {warehouses.map((w) => (
-                <WarehouseCard key={w.id} warehouse={w} onDelete={(id) => setWarehouses(prev => prev.filter(item => item.id !== id))} variants={cardVariants} />
+                <WarehouseCard key={w.id} warehouse={w} onDelete={(id) => setWarehouses(prev => prev.filter(item => item.id !== id))} onEdit={onEdit} variants={cardVariants} />
               ))}
             </AnimatePresence>
           </motion.div>
@@ -149,7 +151,7 @@ export default function MyWarehouses({ setActiveTab, onOpenSidebar }) {
 // ─────────────────────────────────────────────────────────────
 // WarehouseCard — Magic Animated Card
 // ─────────────────────────────────────────────────────────────
-function WarehouseCard({ warehouse: w, onDelete, variants }) {
+function WarehouseCard({ warehouse: w, onDelete, onEdit, variants }) {
   const frontPhoto = w.photos?.frontView || null;
   const [isDeleting, setIsDeleting] = useState(false);
   const [isOnline, setIsOnline] = useState(w.isOnline !== false);
@@ -260,6 +262,13 @@ function WarehouseCard({ warehouse: w, onDelete, variants }) {
           </div>
         )}
         <button
+          onClick={() => onEdit && onEdit(w)}
+          className="w-10 h-10 bg-white/90 backdrop-blur-md border border-white text-orange-500 hover:bg-orange-500 hover:text-white rounded-full flex items-center justify-center shadow-md transition-all opacity-0 group-hover:opacity-100 translate-y-[-10px] group-hover:translate-y-0"
+          title="Edit Property"
+        >
+          <Edit2 className="w-4 h-4" />
+        </button>
+        <button
           onClick={handleDelete}
           disabled={isDeleting}
           className="w-10 h-10 bg-white/90 backdrop-blur-md border border-white text-rose-500 hover:bg-rose-500 hover:text-white rounded-full flex items-center justify-center shadow-md transition-all opacity-0 group-hover:opacity-100 translate-y-[-10px] group-hover:translate-y-0"
@@ -335,9 +344,12 @@ function WarehouseCard({ warehouse: w, onDelete, variants }) {
             {w.createdAt?.seconds ? new Date(w.createdAt.seconds * 1000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Just now'}
           </div>
           
-          <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity text-orange-500 translate-x-4 group-hover:translate-x-0 duration-300">
+          <Link 
+            href={`/warehouse/${encodeWarehouseId(w.id)}`}
+            className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity text-orange-500 translate-x-4 group-hover:translate-x-0 duration-300 hover:underline"
+          >
             View Details <ArrowRight className="w-4 h-4" />
-          </div>
+          </Link>
         </div>
 
         {/* Hidden hover glow inside card */}

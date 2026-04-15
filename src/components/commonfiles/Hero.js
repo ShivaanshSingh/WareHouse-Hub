@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { ArrowRight, Star, ShieldCheck, TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -32,7 +32,7 @@ export default function Hero() {
             </h1>
 
             <p className="text-xl text-slate-600 mb-8 leading-relaxed max-w-lg">
-              The #1 marketplace for commercial storage. We connect verified merchants with premium warehouse space in 24 hours or less.
+              The #1 marketplace for commercial storage. We connect verified Business Clients with premium warehouse space in 24 hours or less.
             </p>
 
             {/* ACTION BUTTONS */}

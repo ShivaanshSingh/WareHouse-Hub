@@ -11,7 +11,9 @@ import { db } from '@/lib/firebase';
 import { collection, collectionGroup, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import ChatBox from '../commonfiles/ChatBox';
 import OptimizedImage from '../commonfiles/OptimizedImage';
-import { Inbox, MessageCircle, Clock as ClockIcon, ExternalLink } from 'lucide-react';
+import { Inbox, MessageCircle, Clock as ClockIcon, ExternalLink, Heart } from 'lucide-react';
+import { useWishlist } from '@/hooks/useWishlist';
+import { getOrCreateConversation, sendMessage } from '@/lib/messaging';
 
 export default function MerchantDashboard({ user, onLogout, onOpenChat }) {
     const [activeTab, setActiveTab] = useState('browse');
@@ -37,6 +39,14 @@ export default function MerchantDashboard({ user, onLogout, onOpenChat }) {
     const [selectedConv, setSelectedConv] = useState(null);
     const [realWarehouses, setRealWarehouses] = useState([]);
     const [warehousesLoading, setWarehousesLoading] = useState(true);
+    
+    // Wishlist Hook
+    const { wishlistedWarehouses } = useWishlist();
+    
+    // Bulk Enquiry State
+    const [showBulkEnquiry, setShowBulkEnquiry] = useState(false);
+    const [bulkEnquiryText, setBulkEnquiryText] = useState('');
+    const [sendingBulk, setSendingBulk] = useState(false);
 
     // Sync localUser with user prop
     useEffect(() => {
@@ -200,6 +210,66 @@ export default function MerchantDashboard({ user, onLogout, onOpenChat }) {
         return cityMatch && categoryMatch && areaMatch && priceMatch;
     });
 
+    const savedWarehouses = realWarehouses.filter(wh => wishlistedWarehouses.includes(wh.id));
+
+    const handleSendBulkEnquiry = async () => {
+        if (!bulkEnquiryText.trim() || savedWarehouses.length === 0) return;
+        setSendingBulk(true);
+        setMessage({ type: '', text: '' });
+        
+        try {
+            let sentCount = 0;
+            for (const warehouse of savedWarehouses) {
+                // Support both ownerId and owner_id formats across different components
+                const actualOwnerId = warehouse.ownerId || warehouse.owner_id || warehouse.userId;
+                
+                if (!actualOwnerId) {
+                    console.warn(`Skipping warehouse ${warehouse.id} due to missing owner ID.`);
+                    continue;
+                }
+                
+                const conv = await getOrCreateConversation(
+                    warehouse.id, 
+                    localUser.uid, 
+                    actualOwnerId, 
+                    {
+                        warehouseName: warehouse.warehouseName || warehouse.name,
+                        merchantName: localUser.name || 'Merchant',
+                        ownerName: warehouse.ownerName || 'Owner',
+                        totalArea: warehouse.totalArea || 0,
+                        pricingAmount: warehouse.pricingAmount || 0,
+                        city: warehouse.city || warehouse.location?.city || '',
+                        category: warehouse.warehouseCategory || warehouse.category || ''
+                    }
+                );
+                
+                await sendMessage(
+                    conv.id, 
+                    localUser.uid, 
+                    bulkEnquiryText.trim(),
+                    'merchant'
+                );
+                
+                sentCount++;
+            }
+            
+            if (sentCount > 0) {
+                setMessage({ type: 'success', text: `Enquiry successfully sent to ${sentCount} warehouse owner(s)!` });
+                setShowBulkEnquiry(false);
+                setBulkEnquiryText('');
+                setActiveTab('chats'); // Redirect to chats to see outgoing messages
+            } else {
+                setMessage({ type: 'error', text: 'Could not send enquiries. Owner information missing for saved warehouses.' });
+            }
+        } catch (error) {
+            console.error('Error sending bulk enquiry:', error);
+            setMessage({ type: 'error', text: 'Failed to send bulk enquiry. Please try again.' });
+        } finally {
+            setSendingBulk(false);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    };
+
     useEffect(() => {
         window.scrollTo({ top: 0, behavior: 'auto' });
     }, []);
@@ -290,6 +360,33 @@ export default function MerchantDashboard({ user, onLogout, onOpenChat }) {
 
                 <main className="p-2 sm:p-4">
                     <div className="max-w-7xl mx-auto">
+                        {/* Global Message Banner */}
+                        {message.text && activeTab !== 'settings' && (
+                            <AnimatePresence>
+                                <motion.div
+                                    initial={{ opacity: 0, y: -20, height: 0 }}
+                                    animate={{ opacity: 1, y: 0, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    className="w-full mb-4"
+                                >
+                                    <div className={`px-4 py-3 rounded-xl border flex items-center justify-between text-sm ${
+                                        message.type === 'success' ? 'bg-green-50 text-green-700 border-green-200 shadow-sm' :
+                                        message.type === 'error' ? 'bg-red-50 text-red-700 border-red-200 shadow-sm' :
+                                        'bg-blue-50 text-blue-700 border-blue-200 shadow-sm'
+                                    }`}>
+                                        <div className="flex items-center gap-2">
+                                            {message.type === 'success' && (
+                                                <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                                            )}
+                                            <span className="font-medium text-base">{message.text}</span>
+                                        </div>
+                                        <button onClick={() => setMessage({ type: '', text: '' })} className="text-current opacity-70 hover:opacity-100 p-1 bg-white/50 rounded-full hover:bg-white transition-colors">
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                        </button>
+                                    </div>
+                                </motion.div>
+                            </AnimatePresence>
+                        )}
                         <AnimatePresence mode="wait">
                             {activeTab === 'browse' && (
                                 <motion.div
@@ -304,7 +401,7 @@ export default function MerchantDashboard({ user, onLogout, onOpenChat }) {
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                         <StatCard icon="🏭" label="Warehouses" value={realWarehouses.length} color="blue" />
                                         <StatCard icon="💬" label="Active Chats" value={realChats.length} color="violet" />
-                                        <StatCard icon="⭐" label="Saved" value="0" color="emerald" />
+                                        <StatCard icon="⭐" label="Saved" value={wishlistedWarehouses.length} color="emerald" />
                                         <StatCard icon="📝" label="Requirements" value="0" color="amber" />
                                     </div>
 
@@ -707,7 +804,70 @@ export default function MerchantDashboard({ user, onLogout, onOpenChat }) {
                                     )}
                                 </motion.div>
                             )}
-                            {activeTab !== 'browse' && activeTab !== 'settings' && activeTab !== 'chats' && (
+                            {activeTab === 'saved' && (
+                                <motion.div
+                                    key="saved"
+                                    initial={{ x: 60, opacity: 0 }}
+                                    animate={{ x: 0, opacity: 1 }}
+                                    exit={{ x: -60, opacity: 0 }}
+                                    transition={{ duration: 0.3, type: 'tween' }}
+                                    className="space-y-6"
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <h2 className="text-xl font-bold text-slate-800">Saved Warehouses</h2>
+                                        <div className="flex items-center gap-3">
+                                            {savedWarehouses.length > 0 && (
+                                                <button 
+                                                    onClick={() => setShowBulkEnquiry(true)}
+                                                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white shadow-sm font-semibold text-sm rounded-xl transition-all"
+                                                >
+                                                    Add Bulk Enquiry
+                                                </button>
+                                            )}
+                                            <span className="hidden sm:inline-block text-sm text-slate-500 bg-white px-3 py-2 rounded-xl border border-slate-200">
+                                                {savedWarehouses.length} Saved
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {savedWarehouses.length === 0 ? (
+                                        <div className="bg-white rounded-3xl p-12 text-center border border-slate-200">
+                                            <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                <Heart className="w-10 h-10 text-red-400" />
+                                            </div>
+                                            <h3 className="text-lg font-bold text-slate-900 mb-2">No saved warehouses</h3>
+                                            <p className="text-slate-500 max-w-sm mx-auto mb-8">
+                                                You haven't added any warehouses to your wishlist yet. Click the heart icon on any listing to save it for later.
+                                            </p>
+                                            <button 
+                                                onClick={() => setActiveTab('browse')}
+                                                className="px-6 py-3 bg-red-500 text-white font-bold rounded-xl hover:bg-red-600 transition-colors shadow-lg shadow-red-200"
+                                            >
+                                                Browse Warehouses
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                                            {savedWarehouses.map((warehouse) => (
+                                                <div key={warehouse.id} className="transition-transform hover:scale-[1.02]">
+                                                    <WarehouseCard
+                                                        id={warehouse.id}
+                                                        title={warehouse.warehouseName}
+                                                        location={`${warehouse.city}, ${warehouse.state}`}
+                                                        price={warehouse.pricingAmount?.toLocaleString('en-IN') || 'Contact'}
+                                                        area={warehouse.totalArea?.toLocaleString()}
+                                                        type={warehouse.warehouseCategory}
+                                                        imageUrl={warehouse.photos?.frontView || warehouse.images?.[0]}
+                                                        facilities={warehouse.amenities || []}
+                                                        amenities={warehouse.amenities || []}
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </motion.div>
+                            )}
+                            {activeTab !== 'browse' && activeTab !== 'settings' && activeTab !== 'chats' && activeTab !== 'saved' && (
                                 <motion.div
                                     key={activeTab}
                                     initial={{ x: 60, opacity: 0 }}
@@ -741,6 +901,69 @@ export default function MerchantDashboard({ user, onLogout, onOpenChat }) {
                         user={user}
                         onClose={() => setSelectedConv(null)}
                     />
+                )}
+            </AnimatePresence>
+
+            {/* Bulk Enquiry Modal */}
+            <AnimatePresence>
+                {showBulkEnquiry && (
+                    <motion.div
+                        className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-[100] p-4"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => !sendingBulk && setShowBulkEnquiry(false)}
+                    >
+                        <motion.div
+                            className="bg-white rounded-3xl w-full max-w-lg p-6 sm:p-8 shadow-2xl relative"
+                            initial={{ scale: 0.95, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.95, y: 20 }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center">
+                                    <MessageCircle className="w-5 h-5" />
+                                </div>
+                                <h3 className="text-2xl font-bold text-slate-900">Send Bulk Enquiry</h3>
+                            </div>
+                            <p className="text-sm text-slate-500 mb-6 mt-1">
+                                Your message will be broadcasted natively as an official inquiry to the owners of all <strong>{savedWarehouses.length}</strong> wishlisted warehouses.
+                            </p>
+
+                            <textarea
+                                value={bulkEnquiryText}
+                                onChange={(e) => setBulkEnquiryText(e.target.value)}
+                                placeholder="E.g., I urgently need 20,000 sq ft for electronics storage. Are your rates negotiable? Please contact me ASAP."
+                                className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all resize-none h-32 mb-6 text-slate-700 font-medium"
+                                disabled={sendingBulk}
+                            />
+
+                            <div className="flex gap-3 justify-end mt-2">
+                                <button
+                                    onClick={() => setShowBulkEnquiry(false)}
+                                    disabled={sendingBulk}
+                                    className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold transition disabled:opacity-50"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleSendBulkEnquiry}
+                                    disabled={!bulkEnquiryText.trim() || sendingBulk}
+                                    className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-xl font-bold transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-blue-200"
+                                >
+                                    {sendingBulk ? (
+                                        <>
+                                            <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                                            Sending...
+                                        </>
+                                    ) : (
+                                        'Broadcast Enquiry'
+                                    )}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
                 )}
             </AnimatePresence>
         </motion.div>

@@ -1,11 +1,18 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { MapPin, Ruler, User, Layers, CheckCircle2 } from 'lucide-react';
+import { MapPin, Ruler, User, Layers, CheckCircle2, Heart } from 'lucide-react';
 import OptimizedImage from './OptimizedImage';
 import { encodeWarehouseId } from '@/lib/warehouseId';
+import { useWishlist } from '@/hooks/useWishlist';
+import { useAuth } from '@/contexts/AuthContext';
 
 const WarehouseCard = ({ id, title, location, price, area, type, imageUrl, owner, facilities, amenities, category }) => {
   const router = useRouter();
+  const { user } = useAuth();
+  const { toggleWishlist, isWishlisted } = useWishlist();
+  
+  const isMerchant = user?.userType === 'merchant';
+  const saved = isWishlisted(id);
 
   return (
     <div 
@@ -24,8 +31,20 @@ const WarehouseCard = ({ id, title, location, price, area, type, imageUrl, owner
           imgClassName="group-hover:scale-105 transition-transform duration-500 object-cover"
         />
         {/* Floating Badges */}
-        <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-semibold text-gray-700 shadow-sm z-10">
-          {type || category || "General"}
+        <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
+          <div className="bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-semibold text-gray-700 shadow-sm">
+            {type || category || "General"}
+          </div>
+          {isMerchant && (
+            <button
+              onClick={(e) => toggleWishlist(id, e)}
+              className="p-1.5 bg-white/90 backdrop-blur-sm rounded-full shadow-sm hover:scale-110 transition-transform focus:outline-none"
+            >
+              <Heart 
+                className={`w-4 h-4 transition-colors ${saved ? 'text-red-500 fill-red-500' : 'text-gray-500'}`} 
+              />
+            </button>
+          )}
         </div>
         <div className="absolute top-3 left-3 bg-green-500 text-white px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider shadow-sm flex items-center gap-1 z-10">
           <CheckCircle2 className="w-3 h-3 mr-1" /> Verified
@@ -46,7 +65,7 @@ const WarehouseCard = ({ id, title, location, price, area, type, imageUrl, owner
           {owner && (
             <div className="flex items-center text-xs text-gray-400 mt-1">
               <User className="w-3 h-3 mr-1" />
-              Owner: <span className="ml-1 text-gray-600 font-medium">{owner}</span>
+              Warehouse Partners: <span className="ml-1 text-gray-600 font-medium">{owner}</span>
             </div>
           )}
         </div>

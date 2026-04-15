@@ -14,12 +14,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { fetchUserWarehouses } from '@/lib/warehouseCollections';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  MapPin, Building2, Layers, Package, DoorOpen,
-  Clock, Search, ChevronDown, Trash2, Eye, Loader2,
-  Sparkles, ArrowUpRight, Shield, WifiOff, Wifi,
-  CheckCircle, XCircle, AlertCircle, Download
+  CheckCircle, XCircle, AlertCircle
 } from 'lucide-react';
-import { generateBrochure } from '@/lib/generateBrochure';
+
 
 export default function DEMyWarehouses({ setActiveTab }) {
   const { user } = useAuth();
@@ -127,7 +124,6 @@ export default function DEMyWarehouses({ setActiveTab }) {
 function DEWarehouseCard({ w, onDelete }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [generatingBrochure, setGeneratingBrochure] = useState(false);
   const [isOnline, setIsOnline] = useState(w.isOnline !== undefined ? w.isOnline : true);
   const [toggling, setToggling] = useState(false);
   const { user } = useAuth();
@@ -165,11 +161,7 @@ function DEWarehouseCard({ w, onDelete }) {
     finally { setToggling(false); }
   };
 
-  const handleDownloadBrochure = async () => {
-    setGeneratingBrochure(true);
-    try { await generateBrochure(w); } catch (err) { console.error(err); alert('Failed to generate brochure.'); }
-    finally { setGeneratingBrochure(false); }
-  };
+
 
   return (
     <motion.div layout className="bg-white/80 rounded-3xl border border-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] transition-all overflow-hidden">
@@ -196,9 +188,7 @@ function DEWarehouseCard({ w, onDelete }) {
             {isOnline ? <Wifi className="w-4 h-4" /> : <WifiOff className="w-4 h-4" />}
           </button>
 
-          <button onClick={handleDownloadBrochure} disabled={generatingBrochure} title="Download Brochure" className="p-2 text-slate-400 hover:text-cyan-600 hover:bg-cyan-50 rounded-lg transition-all">
-            {generatingBrochure ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-          </button>
+
 
           <button onClick={handleDelete} disabled={isDeleting} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all">
             {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}

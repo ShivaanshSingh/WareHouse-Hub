@@ -16,6 +16,7 @@ import {
 export default function OwnerDashboard({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [editingWarehouse, setEditingWarehouse] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const [profileData, setProfileData] = useState({
     name: user?.name || '',
@@ -131,7 +132,7 @@ export default function OwnerDashboard({ user, onLogout }) {
         {sidebarOpen && (
           <motion.div className="fixed inset-0 z-50 bg-slate-900/40 lg:hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSidebarOpen(false)}>
             <motion.div className="absolute left-0 top-0 h-full w-72 bg-[#111111] shadow-2xl border-r border-slate-800 flex flex-col" initial={{ x: -300 }} animate={{ x: 0 }} exit={{ x: -300 }} transition={{ type: 'tween', duration: 0.25 }} onClick={e => e.stopPropagation()}>
-              <OwnerSidebar activeTab={activeTab} setActiveTab={tab => { setActiveTab(tab); setSidebarOpen(false); }} onLogout={onLogout} isDrawer={true} />
+              <OwnerSidebar activeTab={activeTab} setActiveTab={tab => { setActiveTab(tab); setEditingWarehouse(null); setSidebarOpen(false); }} onLogout={onLogout} isDrawer={true} />
             </motion.div>
           </motion.div>
         )}
@@ -153,7 +154,7 @@ export default function OwnerDashboard({ user, onLogout }) {
             </button>
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 bg-orange-600 rounded-md flex items-center justify-center text-white font-bold text-xs shadow-sm">OW</div>
-              <span className="font-bold text-slate-800 text-sm">Owner Portal</span>
+              <span className="font-bold text-slate-800 text-sm">Space Providers Portal</span>
             </div>
             <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-600 border border-white flex items-center justify-center font-bold text-sm shadow-sm">
               {(localUser?.name || 'O')[0].toUpperCase()}
@@ -172,7 +173,7 @@ export default function OwnerDashboard({ user, onLogout }) {
             <div className="flex items-center gap-3">
               <div className="text-right hidden sm:block">
                 <p className="text-sm font-bold text-slate-800 leading-tight">{localUser?.name || 'Owner'}</p>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-orange-500">Admin</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-orange-500">Warehouse Partners</p>
               </div>
               {localUser?.photoURL ? (
                 <img src={localUser.photoURL} alt="Profile" className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-md" />
@@ -189,8 +190,8 @@ export default function OwnerDashboard({ user, onLogout }) {
         <div className={`flex-1 relative ${activeTab === 'dashboard' || activeTab === 'my-warehouses' || activeTab === 'availability' ? '' : 'p-6 sm:p-10'}`}>
           <AnimatePresence mode="wait">
             {activeTab === 'dashboard' && <motion.div key="dash" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}><DashboardHome setActiveTab={setActiveTab} onOpenSidebar={() => setSidebarOpen(true)} /></motion.div>}
-            {activeTab === 'my-warehouses' && <motion.div key="wh" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}><MyWarehouses setActiveTab={setActiveTab} onOpenSidebar={() => setSidebarOpen(true)} /></motion.div>}
-            {activeTab === 'add-warehouse' && <motion.div key="add" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}><AddWarehouse setActiveTab={setActiveTab} /></motion.div>}
+            {activeTab === 'my-warehouses' && <motion.div key="wh" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}><MyWarehouses setActiveTab={setActiveTab} onOpenSidebar={() => setSidebarOpen(true)} onEdit={(w) => { setEditingWarehouse(w); setActiveTab('add-warehouse'); }} /></motion.div>}
+            {activeTab === 'add-warehouse' && <motion.div key="add" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}><AddWarehouse setActiveTab={setActiveTab} editingWarehouse={editingWarehouse} /></motion.div>}
             {activeTab === 'inquiries' && <motion.div key="inq" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}><Inquiries /></motion.div>}
             {activeTab === 'calendar' && <motion.div key="cal" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}><Availability onOpenSidebar={() => setSidebarOpen(true)} /></motion.div>}
             
@@ -328,7 +329,7 @@ export default function OwnerDashboard({ user, onLogout }) {
                           </div>
                         )}
                         
-                        <InfoField icon={<Shield />} label="Account Access Level" value="Administrative Owner" />
+                        <InfoField icon={<Shield />} label="Account Access Level" value="Warehouse Partner" />
                         
                         <div className="flex flex-col justify-center p-5 bg-white/40 backdrop-blur-md rounded-2xl border border-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.02)] group cursor-default">
                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-2">Email Verification</p>

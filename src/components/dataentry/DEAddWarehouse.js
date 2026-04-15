@@ -65,7 +65,7 @@ export default function DEAddWarehouse({ setActiveTab }) {
     customSuitableGood: '', valueAddedServices: [], customValueAddedService: '',
   });
   const [pricingDetails, setPricingDetails] = useState({
-    pricingUnit: '', customPricingUnit: '', storageRate: '', handlingRate: '', minCommitment: '', shortTermStorage: '',
+    pricingUnit: '', customPricingUnit: '', storageRate: '', handlingFees: '', minCommitment: '', shortTermStorage: '',
   });
   const [photos, setPhotos] = useState({ frontView: null, insideView: null, dockArea: null, rateCard: null });
 
@@ -173,7 +173,7 @@ export default function DEAddWarehouse({ setActiveTab }) {
         suitableGoods: operationsDetails.suitableGoods.map(g => g === 'Others' && operationsDetails.customSuitableGood.trim() ? operationsDetails.customSuitableGood.trim() : g),
         valueAddedServices: operationsDetails.valueAddedServices.map(s => s === 'Others' && operationsDetails.customValueAddedService.trim() ? operationsDetails.customValueAddedService.trim() : s),
         pricingUnit: pricingDetails.pricingUnit === 'Custom' ? pricingDetails.customPricingUnit.trim() : pricingDetails.pricingUnit,
-        storageRate: Number(pricingDetails.storageRate), handlingRate: pricingDetails.handlingRate ? Number(pricingDetails.handlingRate) : null,
+        storageRate: Number(pricingDetails.storageRate), handlingFees: pricingDetails.handlingFees ? Number(pricingDetails.handlingFees) : null,
         minCommitment: pricingDetails.minCommitment, shortTermStorage: pricingDetails.shortTermStorage,
         photos: { frontView: frontViewURL, insideView: insideViewURL, dockArea: dockAreaURL, rateCard: rateCardURL },
         businessType: ownerDetails.businessType, companyName: ownerDetails.companyName.trim(), contactPerson: ownerDetails.contactPerson.trim(),
@@ -425,7 +425,7 @@ export default function DEAddWarehouse({ setActiveTab }) {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <SelectField label="Pricing Unit" id="pricingUnit" options={PRICING_UNITS} placeholder="Select unit" value={pricingDetails.pricingUnit} onChange={v => handlePricingChange('pricingUnit', v)} mandatory errors={errors} />
                         <Field label="Storage Rate (₹)" id="storageRate" type="number" placeholder="Approximate value" value={pricingDetails.storageRate} onChange={v => handlePricingChange('storageRate', v)} mandatory errors={errors} />
-                        <Field label="Handling Rate — Optional (₹)" id="handlingRate" type="number" placeholder="Leave blank if N/A" value={pricingDetails.handlingRate} onChange={v => handlePricingChange('handlingRate', v)} errors={errors} />
+                        <Field label="Handling Fees — Optional (₹)" id="handlingFees" type="number" placeholder="Leave blank if N/A" value={pricingDetails.handlingFees} onChange={v => handlePricingChange('handlingFees', v)} errors={errors} />
                         <SelectField label="Minimum Commitment" id="minCommitment" options={MIN_COMMITMENT_OPTIONS} placeholder="Select duration" value={pricingDetails.minCommitment} onChange={v => handlePricingChange('minCommitment', v)} mandatory errors={errors} />
                         <div className="md:col-span-2">
                           <SelectField label="Short-Term Storage Available" id="shortTermStorage" options={SHORT_TERM_OPTIONS} placeholder="Select option" value={pricingDetails.shortTermStorage} onChange={v => handlePricingChange('shortTermStorage', v)} mandatory errors={errors} />

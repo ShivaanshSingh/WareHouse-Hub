@@ -26,8 +26,8 @@ export default function ChatBox({ warehouse, user, onClose }) {
           warehouse.ownerId,
           {
             warehouseName: warehouse.warehouseName || warehouse.name,
-            merchantName: warehouse.merchantName || user.name || user.displayName || 'Merchant',
-            ownerName: warehouse.ownerName || warehouse.contactPerson || 'Owner',
+            merchantName: warehouse.merchantName || user.name || user.displayName || 'Business Clients',
+            ownerName: warehouse.ownerName || warehouse.contactPerson || 'Warehouse Partners',
             totalArea: warehouse.totalArea || 0,
             pricingAmount: warehouse.pricingAmount || 0,
             city: warehouse.city || warehouse.location?.city || '',
@@ -54,7 +54,7 @@ export default function ChatBox({ warehouse, user, onClose }) {
               id: 'INTRO',
               senderId: 'SYSTEM',
               senderType: 'system',
-              message: `You're now connected with ${user.userType === 'merchant' ? warehouse.ownerName : 'the merchant'}. Start your conversation about ${warehouse.name}.`,
+              message: `You're now connected with ${user.userType === 'merchant' ? warehouse.ownerName : 'the Business Clients'}. Start your conversation about ${warehouse.name}.`,
               timestamp: new Date().toISOString(),
               read: true
             }])
@@ -124,7 +124,7 @@ export default function ChatBox({ warehouse, user, onClose }) {
                 <h3 className="text-xl font-black text-slate-900 tracking-tight">{warehouse.name || warehouse.warehouseName}</h3>
                 <div className="flex items-center gap-2 mt-0.5">
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                    {user.userType === 'merchant' ? warehouse.ownerName : 'Merchant Inquiry'}
+                    {user.userType === 'merchant' ? warehouse.ownerName : 'Business Clients Inquiry'}
                   </p>
                   <span className="w-1 h-1 bg-slate-300 rounded-full" />
                   <p className="text-xs font-black text-orange-500">
