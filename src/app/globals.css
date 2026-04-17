@@ -9,9 +9,17 @@
   --line-height-base: 1.65;
 }
 
+/* ── Base ──────────────────────────────────────────────────────── */
+
+html {
+  scroll-behavior: smooth;
+  font-size: var(--font-size-base);
+}
+
 body {
   color: var(--foreground);
   background: var(--background);
+  line-height: var(--line-height-base);
 }
 
 @layer utilities {
@@ -20,183 +28,8 @@ body {
   }
 }
 
-/* Smooth scroll + base font size */
-html {
-  scroll-behavior: smooth;
-  font-size: var(--font-size-base);
-  /* 17px — slightly larger than browser default 16px */
-}
+/* ── Custom scrollbar ─────────────────────────────────────────── */
 
-body {
-  line-height: var(--line-height-base);
-}
-
-/* Custom gradient mesh for hero */
-.gradient-mesh {
-  background:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(14, 165, 233, 0.25), transparent),
-    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(245, 158, 11, 0.1), transparent),
-    radial-gradient(ellipse 50% 30% at 0% 50%, rgba(16, 185, 129, 0.08), transparent);
-}
-
-/* Grid pattern overlay */
-.grid-pattern {
-  background-image:
-    linear-gradient(rgba(15, 23, 42, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(15, 23, 42, 0.03) 1px, transparent 1px);
-  background-size: 48px 48px;
-}
-
-/* Custom animations */
-@keyframes fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slide-up {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slide-in-left {
-  from {
-    opacity: 0;
-    transform: translateX(-30px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes slide-in-right {
-  from {
-    opacity: 0;
-    transform: translateX(30px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes scale-in {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes float {
-
-  0%,
-  100% {
-    transform: translateY(0px);
-  }
-
-  50% {
-    transform: translateY(-20px);
-  }
-}
-
-@keyframes pulse-glow {
-
-  0%,
-  100% {
-    box-shadow: 0 0 20px rgba(249, 115, 22, 0.3);
-  }
-
-  50% {
-    box-shadow: 0 0 40px rgba(249, 115, 22, 0.6);
-  }
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: -1000px 0;
-  }
-
-  100% {
-    background-position: 1000px 0;
-  }
-}
-
-@keyframes gradient-shift {
-
-  0%,
-  100% {
-    background-position: 0% 50%;
-  }
-
-  50% {
-    background-position: 100% 50%;
-  }
-}
-
-.animate-fade-in {
-  animation: fade-in 0.6s ease-out;
-}
-
-.animate-slide-up {
-  animation: slide-up 0.8s ease-out;
-}
-
-.animate-slide-in-left {
-  animation: slide-in-left 0.6s ease-out;
-}
-
-.animate-slide-in-right {
-  animation: slide-in-right 0.6s ease-out;
-}
-
-.animate-scale-in {
-  animation: scale-in 0.6s ease-out;
-}
-
-.animate-float {
-  animation: float 3s ease-in-out infinite;
-}
-
-.animate-pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
-}
-
-.animate-shimmer {
-  animation: shimmer 2s linear infinite;
-}
-
-.animate-gradient-shift {
-  animation: gradient-shift 3s ease infinite;
-  background-size: 200% 200%;
-}
-
-/* Fix global: removed wildcard transition-timing-function.
-   Applying a transition property to EVERY element causes the browser to
-   track and compute easing on ALL elements during EVERY repaint — a major
-   source of scroll jank site-wide. Individual components set their own. */
-
-/* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -215,24 +48,24 @@ body {
   background: #f97316;
 }
 
-/* GPU-layer promotion for sidebar transitions */
+/* ── Layout containment for performance ───────────────────────── */
+
 .group.w-20 {
   will-change: width;
   contain: layout style;
 }
 
-/* Contain repaints to the main content area */
 main.flex-1 {
   contain: layout style;
 }
 
-/* Focus states */
+/* ── Focus & selection ────────────────────────────────────────── */
+
 *:focus-visible {
   outline: 2px solid #f97316;
   outline-offset: 2px;
 }
 
-/* Selection color */
 ::selection {
   background-color: #f97316;
   color: white;

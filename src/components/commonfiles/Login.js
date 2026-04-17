@@ -607,71 +607,6 @@ function AuthFormStep({ userType, onBack, onLoginSuccess }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CURSOR TRACKER
-// ─────────────────────────────────────────────────────────────────────────────
-
-function CursorTracker() {
-  const trackerRef = useRef(null);
-
-  useEffect(() => {
-    let animationFrameId;
-    let currentX = 0, currentY = 0;
-    let targetX = 0, targetY = 0;
-    
-    // Slower, smoother trailing effect
-    const updateTracker = () => {
-      const dx = targetX - currentX;
-      const dy = targetY - currentY;
-      
-      // Kept at 0.08 for that premium heavy drag feel
-      currentX += dx * 0.08;
-      currentY += dy * 0.08;
-
-      if (trackerRef.current) {
-        trackerRef.current.style.transform = `translate3d(${currentX}px, ${currentY}px, 0)`;
-      }
-      
-      animationFrameId = requestAnimationFrame(updateTracker);
-    };
-
-    const handleMouseMove = (e) => {
-      targetX = e.clientX;
-      targetY = e.clientY;
-    };
-    
-    // Initial setup hidden until mouse move
-    currentX = window.innerWidth / 2;
-    currentY = window.innerHeight / 2;
-    targetX = currentX;
-    targetY = currentY;
-
-    window.addEventListener("mousemove", handleMouseMove);
-    animationFrameId = requestAnimationFrame(updateTracker);
-    
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      cancelAnimationFrame(animationFrameId);
-    };
-  }, []);
-
-  return (
-    <div className="pointer-events-none fixed inset-0 z-[100] hidden md:block overflow-hidden">
-      {/* Professional subtle warehouse scanner viewfinder */}
-      <div
-        ref={trackerRef}
-        className="absolute top-0 left-0 w-8 h-8 -ml-4 -mt-4 transition-opacity duration-300"
-        style={{ willChange: 'transform' }}
-      >
-        <div className="absolute top-0 left-0 w-2 h-2 border-t-[1.5px] border-l-[1.5px] border-[#E65100]/50" />
-        <div className="absolute top-0 right-0 w-2 h-2 border-t-[1.5px] border-r-[1.5px] border-[#E65100]/50" />
-        <div className="absolute bottom-0 left-0 w-2 h-2 border-b-[1.5px] border-l-[1.5px] border-[#E65100]/50" />
-        <div className="absolute bottom-0 right-0 w-2 h-2 border-b-[1.5px] border-r-[1.5px] border-[#E65100]/50" />
-      </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // MAIN EXPORT
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -687,7 +622,6 @@ export default function Login({ onLoginSuccess }) {
 
   return (
     <>
-      <CursorTracker />
       <section ref={sectionRef} id="login" className="w-full bg-white py-24 md:py-36 overflow-hidden">
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           <div className="grid md:grid-cols-12 gap-12 items-center">
